@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "start": {
+      "cmd": "deno run --allow-net --allow-read server.ts",
+      "desc": "Run the Deno server"
+    },
+    "tailwind": {
+      "cmd": "npx tailwindcss -i ./public/tailwind.css -o ./public/styles.css --watch",
+      "desc": "Start the Tailwind watcher"
+    },
+    "dev": {
+      "cmd": "denon start & denon tailwind",
+      "desc": "Run both Deno server and Tailwind watcher"
+    }
+  }
+}

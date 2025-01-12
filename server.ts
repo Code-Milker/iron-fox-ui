@@ -1,59 +1,71 @@
 import { Application, Router, send } from "https://deno.land/x/oak/mod.ts";
-import { Handlebars } from "https://deno.land/x/handlebars/mod.ts";
-import { join, dirname } from "https://deno.land/std/path/mod.ts";
+import { join } from "https://deno.land/std/path/mod.ts";
 
-// Initialize application and router
 const app = new Application();
 const router = new Router();
 
-// Initialize Handlebars
-const handlebars = new Handlebars({
-  baseDir: "./views",
-  extname: ".hbs",
-  layoutsDir: "layouts",
-  partialsDir: "partials",
-  defaultLayout: "main",
-});
+// Helper function: Render HTML with partials and variables
+async function renderHTMLWithPartials(
+  filePath: string,
+  partials: Record<string, string>,
+  vars: Record<string, string>
+): Promise<string> {
+  let template = await Deno.readTextFile(filePath);
 
-// Middleware: Serve static files from "public" folder
-app.use(async (ctx, next) => {
-  try {
-    const filePath = join(Deno.cwd(), "public", ctx.request.url.pathname);
-    await send(ctx, ctx.request.url.pathname, {
-      root: join(Deno.cwd(), "public"),
-      index: "index.html", // Serve index.html for root path if available
-    });
-  } catch {
-    await next(); // Proceed to other routes if the file is not found
+  // Inject partials
+  for (const [key, partialPath] of Object.entries(partials)) {
+    const partialContent = await Deno.readTextFile(partialPath);
+    template = template.replaceAll(`{{${key}}}`, partialContent);
   }
-});
 
-// Route: Home Page
+  // Inject variables
+  for (const [key, value] of Object.entries(vars)) {
+    template = template.replaceAll(`{{${key}}}`, value);
+  }
+
+  return template;
+}
+
+// Route: Home page
 router.get("/", async (ctx) => {
-  try {
-    const data = {
-      title: "Welcome",
-      message: "Please enter your address or transaction hash.",
-    };
-    ctx.response.body = await handlebars.renderView("home", data);
-  } catch (err) {
-    console.error("Error rendering template:", err);
-    ctx.response.status = 500;
-    ctx.response.body = "Internal Server Error";
-  }
+  const filePath = join(Deno.cwd(), "public", "index.html");
+  const content = await renderHTMLWithPartials(
+    filePath,
+    {
+      header: join(Deno.cwd(), "partials", "header.html"),
+      footer: join(Deno.cwd(), "partials", "footer.html"),
+    },
+    {
+      title: "Welcome to My App",
+      welcomeMessage: "Hello, World!",
+      description: "This is a dynamically generated page using partials and variables.",
+    }
+  );
+  ctx.response.body = content;
 });
 
-// Route: Catch-All for 404 Errors
+
+// Fallback for 404
 router.get("(.*)", (ctx) => {
   ctx.response.status = 404;
   ctx.response.body = "404 - Page Not Found";
 });
 
-// Use Router
+// Apply routes and middleware
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-// Start the Server
+// Middleware: Serve static files
+app.use(async (ctx, next) => {
+  try {
+    await send(ctx, ctx.request.url.pathname, {
+      root: join(Deno.cwd(), "public"),
+      index: "index.html", // Serve index.html for root
+    });
+  } catch {
+    await next();
+  }
+});
 const PORT = 8000;
-console.log(`Server running at http://localhost:${PORT}`);
+console.log(`Server is running on http://localhost:${PORT}`);
 await app.listen({ port: PORT });

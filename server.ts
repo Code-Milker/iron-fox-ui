@@ -1,4 +1,4 @@
-import { Application, Router, send } from "https://deno.land/x/oak/mod.ts";
+import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 import { join } from "https://deno.land/std/path/mod.ts";
 
 const app = new Application();
@@ -26,46 +26,38 @@ async function renderHTMLWithPartials(
   return template;
 }
 
-// Route: Home page
+// Route: Serve the home page with embedded CSS
 router.get("/", async (ctx) => {
   const filePath = join(Deno.cwd(), "public", "index.html");
+  const cssPath = join(Deno.cwd(), "public", "styles.css");
+  console.log(cssPath)
+  const cssContent = await Deno.readTextFile(cssPath);
+
+  console.log(cssPath)
+console.log(cssContent)
   const content = await renderHTMLWithPartials(
     filePath,
     {
       header: join(Deno.cwd(), "partials", "header.html"),
       footer: join(Deno.cwd(), "partials", "footer.html"),
+      input: join(Deno.cwd(), "partials", "input.html"),
     },
     {
       title: "Welcome to My App",
-      welcomeMessage: "Hello, World!",
-      description: "This is a dynamically generated page using partials and variables.",
+      welcomeMessage: "Hello, Dynamic World!",
+      description: "This page has embedded styles.",
+      styles: `<style>${cssContent}</style>`, // Embed CSS directly into the HTML
     }
   );
+
   ctx.response.body = content;
 });
 
-
-// Fallback for 404
-router.get("(.*)", (ctx) => {
-  ctx.response.status = 404;
-  ctx.response.body = "404 - Page Not Found";
-});
-
-// Apply routes and middleware
+// Use routes
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-// Middleware: Serve static files
-app.use(async (ctx, next) => {
-  try {
-    await send(ctx, ctx.request.url.pathname, {
-      root: join(Deno.cwd(), "public"),
-      index: "index.html", // Serve index.html for root
-    });
-  } catch {
-    await next();
-  }
-});
+// Start the server
 const PORT = 8000;
 console.log(`Server is running on http://localhost:${PORT}`);
 await app.listen({ port: PORT });

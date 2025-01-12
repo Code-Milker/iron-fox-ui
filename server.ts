@@ -33,19 +33,17 @@ router.get("/", async (ctx) => {
   console.log(cssPath)
   const cssContent = await Deno.readTextFile(cssPath);
 
-  console.log(cssPath)
-console.log(cssContent)
   const content = await renderHTMLWithPartials(
     filePath,
     {
       header: join(Deno.cwd(), "partials", "header.html"),
       footer: join(Deno.cwd(), "partials", "footer.html"),
-      input: join(Deno.cwd(), "partials", "input.html"),
+      // input: join(Deno.cwd(), "partials", "input.html"),
+      card: join(Deno.cwd(), "partials", "card.html"),
     },
     {
-      title: "Welcome to My App",
+      title: "Iron Fox",
       welcomeMessage: "Hello, Dynamic World!",
-      description: "This page has embedded styles.",
       styles: `<style>${cssContent}</style>`, // Embed CSS directly into the HTML
     }
   );

@@ -1,18 +1,25 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}}</title>
-    {{styles}}
+  <!-- Injected Styles -->
+  {{styles}}
+
 </head>
-<body>
+<body class="bg-iron-fox text-iron-fox-light-gray flex flex-col min-h-screen">
+  <!-- Header -->
   {{header}}
-  <main>
-    <h2>{{welcomeMessage}}</h2>
-    <p>{{input}}</p>
+
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto py-6">
+    <p class="text-center text-iron-fox-dark-gray text-lg">
+      {{card}}
+    </p>
   </main>
+
+  <!-- Footer -->
   {{footer}}
 </body>
 </html>

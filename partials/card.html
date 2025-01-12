@@ -1,4 +1,3 @@
-
 <div class="bg-gradient-to-br from-iron-fox-dark-gray/10 via-iron-fox-dark-gray/20 to-iron-fox-dark-gray/10 text-iron-fox-light-gray p-8 rounded-lg shadow-lg max-w-md w-full mx-auto">
   <!-- Card Header -->
   <h2 class="text-iron-fox-cyan text-xl font-bold mb-4">Trace Crypto</h2>
@@ -18,9 +17,53 @@
   />
   
   <!-- Generate Report Button -->
-<button
-  class="w-full bg-iron-fox-cyan text-iron-fox-light-gray font-semibold py-2 rounded-lg hover:bg-iron-fox-cyan-dark hover:shadow-md hover:shadow-iron-fox-cyan/50 focus:outline-none focus:ring-2 focus:ring-iron-fox-cyan focus:ring-offset-2 transition-transform transform hover:scale-105"
->
-  Generate Report
-</button>
+  <button
+    id="generate-report-button"
+    class="w-full bg-iron-fox-cyan text-iron-fox-light-gray font-semibold py-2 rounded-lg hover:bg-iron-fox-cyan-dark hover:shadow-md hover:shadow-iron-fox-cyan/50 focus:outline-none focus:ring-2 focus:ring-iron-fox-cyan focus:ring-offset-2 transition-transform transform hover:scale-105"
+  >
+    Generate Report
+  </button>
 </div>
+
+<script>
+  // API endpoint URL
+  const apiEndpoint = "http://localhost:8000/generate-report";
+
+  // Button click event handler
+  document.getElementById("generate-report-button").addEventListener("click", async () => {
+    // Get the input value
+    const transactionHash = document.getElementById("trace-input").value;
+
+    // Basic validation
+    if (!transactionHash) {
+      alert("Please enter a valid address or transaction hash.");
+      return;
+    }
+
+    try {
+      // Call the API with fetch
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ transactionHash }),
+      });
+
+      // Check if the response is successful
+      if (!response.ok) {
+        throw new Error(`API call failed with status ${response.status}`);
+      }
+
+      // Parse and handle the response
+      const data = await response.json();
+      console.log("Report Response:", data);
+
+      // Display a success message or render the report (simplified here)
+      alert(`Report generated successfully: ${data.message}`);
+    } catch (error) {
+      console.error("Error generating report:", error.message);
+      alert("Failed to generate the report. Please try again.");
+    }
+  });
+</script>

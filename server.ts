@@ -1,8 +1,10 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 import { join } from "https://deno.land/std/path/mod.ts";
-
+import generateReportRoute from "./routes/generate-report.ts";
 const app = new Application();
 const router = new Router();
+app.use(generateReportRoute.routes());
+app.use(generateReportRoute.allowedMethods());
 
 // Helper function: Render HTML with partials and variables
 async function renderHTMLWithPartials(

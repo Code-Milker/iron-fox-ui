@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Satoshi:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    >
+    <!-- Injected Styles -->
+    {{styles}} {{scripts}}
+  </head>
+  <body class="bg-iron-fox text-iron-fox-light-gray flex flex-col min-h-screen">
+    <!-- Header -->
+    {{header}}
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto py-6">
+      <p class="text-center text-iron-fox-dark-gray text-lg">
+        {{card}}
+      </p>
+    </main>
+
+    <!-- Footer -->
+    {{footer}}
+  </body>
+</html>

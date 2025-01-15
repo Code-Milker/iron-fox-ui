@@ -1,8 +1,7 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import generateReportRoute from "./routes/generate-report.ts";
-import { Application, Router } from "https://deno.land/x/oak/mod.ts";
+import { Application, Router, send } from "https://deno.land/x/oak/mod.ts";
 import { transpile } from "https://deno.land/x/emit@0.40.0/mod.ts";
-
 const app = new Application();
 const router = new Router();
 
@@ -37,7 +36,6 @@ async function renderHTMLWithDynamicTS(
 
   // Inject transpiled JavaScript
   template = template.replaceAll("{{scripts}}", `<script>${jsCode}</script>`);
-  console.log(template);
 
   return template;
 }
@@ -70,6 +68,25 @@ router.get("/", async (ctx) => {
 // Use routes
 app.use(router.routes());
 app.use(router.allowedMethods());
+app.use(async (ctx, next) => {
+  const filePath = ctx.request.url.pathname;
+  try {
+    await send(ctx, filePath, {
+      root: `${Deno.cwd()}/src/public`, // Serve files from the "public" folder
+    });
+  } catch {
+    await next(); // Proceed to other routes if file not found
+  }
+});
+
+app.addEventListener("listen", ({ hostname, port, secure }) => {
+  console.log(
+    `Server running on ${secure ? "https://" : "http://"}${
+      hostname ??
+        "localhost"
+    }:${port}`,
+  );
+});
 
 // Start the server
 const PORT = 8000;

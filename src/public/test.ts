@@ -30,11 +30,10 @@ document.getElementById("generate-report-button").addEventListener(
 
       // Parse and handle the response
       const data = await response.json();
-      console.log("Report Response:", data);
 
       // Display a success message or render the report (simplified here)
       alert(`Report generated successfully: ${data.message}`);
-    } catch (error) {
+    } catch (error: Error) {
       console.error("Error generating report:", error.message);
       alert("Failed to generate the report. Please try again.");
     }

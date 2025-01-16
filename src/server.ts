@@ -53,6 +53,8 @@ router.get("/", async (ctx) => {
       header: join(Deno.cwd(), "src/partials", "header.html"),
       footer: join(Deno.cwd(), "src/partials", "footer.html"),
       card: join(Deno.cwd(), "src/partials", "card.html"),
+      content: join(Deno.cwd(), "src/partials", "content.html"), // Add Products Partial
+      mission: join(Deno.cwd(), "src/partials", "mission.html"), // Add Products Partial
     },
     {
       title: "Iron Fox",

@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "server": "deno run --allow-net --allow-read --allow-env src/server.ts",
+    "server": "deno run --allow-net --allow-read --watch --allow-env src/server.ts",
     "tailwind": "tailwindcss -i ./src/public/tailwind.css -o ./src/public/styles.css --watch",
     "dev": "deno fmt && deno task tailwind & deno task server"
   }

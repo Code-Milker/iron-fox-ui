@@ -781,6 +781,10 @@ video {
   max-width: 1200px;
 }
 
+.max-w-\[1000px\] {
+  max-width: 1000px;
+}
+
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -1191,9 +1195,19 @@ video {
   background-color: rgb(0 136 204 / var(--tw-bg-opacity, 1));
 }
 
+.hover\:text-lg:hover {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
 .hover\:text-iron-fox-cyan-dark:hover {
   --tw-text-opacity: 1;
   color: rgb(0 136 204 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-iron-fox-cyan:hover {
+  --tw-text-opacity: 1;
+  color: rgb(0 200 255 / var(--tw-text-opacity, 1));
 }
 
 .hover\:underline:hover {

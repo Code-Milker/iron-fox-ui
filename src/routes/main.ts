@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { render, renderPage } from "../utils/moo-moo.ts";
+import { renderPage } from "../utils/moo-moo.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
@@ -15,7 +15,6 @@ router.get("/", async (ctx) => {
     {},
     "", // Pass the TypeScript file path
   );
-
   ctx.response.body = main;
 });
 export default router;

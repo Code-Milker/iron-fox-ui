@@ -761,16 +761,12 @@ video {
   min-width: calc(50% - 10px);
 }
 
-.max-w-md {
-  max-width: 28rem;
-}
-
-.max-w-\[1200px\] {
-  max-width: 1200px;
-}
-
 .max-w-\[1400px\] {
   max-width: 1400px;
+}
+
+.max-w-md {
+  max-width: 28rem;
 }
 
 .flex-1 {

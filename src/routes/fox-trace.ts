@@ -3,6 +3,67 @@ import { Router } from "https://deno.land/x/oak/mod.ts";
 import { render, renderPage } from "../utils/moo-moo.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
+  const product = await getProduct();
+  const features = await getFeatures();
+  const main = await renderPage(
+    join(Deno.cwd(), "src/partials", "fox-trace.html"),
+    {},
+    { product, features },
+    "", // Pass the TypeScript file path
+  );
+  ctx.response.body = main;
+});
+
+const getPricing = async () => {
+  const card = await render(
+    join(Deno.cwd(), "src/partials", "card.html"),
+    {},
+    {
+      title: "Bot Detection and Analysis",
+      body: `
+    Unveils transaction patterns characteristic of bot activity, identifying automated wallets used by hackers.`,
+      extra: "",
+    },
+    "",
+  );
+
+  const content = await render(
+    join(Deno.cwd(), "src/partials", "content.html"),
+    {},
+    {
+      title: "The Algorithm That Fights Back",
+      card: card,
+    },
+    "",
+  );
+  return content;
+};
+
+const getFeatures = async () => {
+  const card = await render(
+    join(Deno.cwd(), "src/partials", "card.html"),
+    {},
+    {
+      title: "Bot Detection and Analysis",
+      body: `
+    Unveils transaction patterns characteristic of bot activity, identifying automated wallets used by hackers.`,
+      extra: "",
+    },
+    "",
+  );
+
+  const content = await render(
+    join(Deno.cwd(), "src/partials", "content.html"),
+    {},
+    {
+      title: "The Algorithm That Fights Back",
+      card: card,
+    },
+    "",
+  );
+  return content;
+};
+const getProduct = async () => {
   const button = await render(
     join(Deno.cwd(), "src/partials", "button.html"),
     {},
@@ -41,13 +102,6 @@ router.get("/fox-trace", async (ctx) => {
     },
     "",
   );
-
-  const main = await renderPage(
-    join(Deno.cwd(), "src/partials", "fox-trace.html"),
-    {},
-    { content1: content },
-    "", // Pass the TypeScript file path
-  );
-  ctx.response.body = main;
-});
+  return content;
+};
 export default router;

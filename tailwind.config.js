@@ -18,6 +18,7 @@ module.exports = {
           "metallic": "#B0BEC5", // Metallic silver
           "cyan": "#00C8FF", // Vibrant cyan for highlights
           "cyan-dark": "#0088CC", // Slightly darker cyan
+          "cyan-darker": "#0078A3",
           "accent": "#1A1A25", // Accent dark background
         },
       },

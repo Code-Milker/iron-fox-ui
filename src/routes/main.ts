@@ -1,15 +1,39 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { renderPage } from "../utils/moo-moo.ts";
+import { render, renderPage } from "../utils/moo-moo.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
   const filePath = join(Deno.cwd(), "src/partials", "main.html");
+
+  const card = await render(
+    join(Deno.cwd(), "src/partials", "card.html"),
+    {},
+    {
+      textBody:
+        `Leverages advanced algorithms and blockchain analytics to uncover hidden
+    trails, identify malicious actors, and provide actionable insights. It
+    empowers crypto enthusiasts, security professionals, and law enforcement
+    agencies to do stuff.`,
+    },
+    "",
+  );
+
+  console.log(card);
+  const content = await render(
+    join(Deno.cwd(), "src/partials", "content.html"),
+    {},
+    {
+      title: "Products",
+      card: card,
+    },
+    "",
+  );
+
   const main = await renderPage(
     filePath,
     {
-      card: join(Deno.cwd(), "src/partials", "card.html"),
-      content: join(Deno.cwd(), "src/partials", "content.html"), // Add Products Partial
+      content: content, // Add Products Partial
       mission: join(Deno.cwd(), "src/partials", "mission.html"), // Add Products Partial
     },
     {},

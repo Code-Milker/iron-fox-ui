@@ -50,7 +50,6 @@ export async function renderPage(
   tsFilePath: string,
 ): Promise<string> {
   const page = await render(path, partials, vars, tsFilePath);
-  console.log(page);
 
   const filePath = join(Deno.cwd(), "src/public", "index.html");
   const cssPath = join(Deno.cwd(), "src/public", "styles.css");

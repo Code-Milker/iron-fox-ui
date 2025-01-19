@@ -5,40 +5,42 @@ const router = new Router();
 router.get("/fox-trace", async (ctx) => {
   const product = await getProduct();
   const features = await getFeatures();
+  const pricing = await getPricing();
   const main = await renderPage(
     join(Deno.cwd(), "src/partials", "fox-trace.html"),
     {},
-    { product, features },
+    {
+      product,
+      features,
+      pricing,
+    },
     "", // Pass the TypeScript file path
   );
   ctx.response.body = main;
 });
 
 const getPricing = async () => {
-  const card = await render(
-    join(Deno.cwd(), "src/partials", "card.html"),
+  const pricing = await render(
+    join(Deno.cwd(), "src/partials", "pricing.html"),
     {},
     {
-      title: "Bot Detection and Analysis",
-      body: `
-    Unveils transaction patterns characteristic of bot activity, identifying automated wallets used by hackers.`,
+      title: "Pricing",
+      body: ``,
       extra: "",
     },
     "",
   );
-
   const content = await render(
     join(Deno.cwd(), "src/partials", "content.html"),
     {},
     {
-      title: "The Algorithm That Fights Back",
-      card: card,
+      title: "Pricing",
+      content: pricing,
     },
     "",
   );
   return content;
 };
-
 const getFeatures = async () => {
   const card = await render(
     join(Deno.cwd(), "src/partials", "card.html"),
@@ -57,7 +59,7 @@ const getFeatures = async () => {
     {},
     {
       title: "The Algorithm That Fights Back",
-      card: card,
+      content: card,
     },
     "",
   );
@@ -98,7 +100,7 @@ const getProduct = async () => {
     {},
     {
       title: "Fox Trace",
-      card: card,
+      content: card,
     },
     "",
   );

@@ -26,7 +26,7 @@ router.get("/", async (ctx) => {
     {},
     {
       title: "Products",
-      card: card,
+      content: card,
     },
     "",
   );

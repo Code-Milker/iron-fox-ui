@@ -5,21 +5,22 @@ const router = new Router();
 
 router.get("/", async (ctx) => {
   const filePath = join(Deno.cwd(), "src/partials", "main.html");
-
   const card = await render(
-    join(Deno.cwd(), "src/partials", "card.html"),
+    join(Deno.cwd(), "src/partials", "card-with-img.html"),
     {},
     {
-      textBody:
+      img: "magnify.jpg",
+      title: "Fox Trace",
+      body:
         `Leverages advanced algorithms and blockchain analytics to uncover hidden
     trails, identify malicious actors, and provide actionable insights. It
     empowers crypto enthusiasts, security professionals, and law enforcement
     agencies to do stuff.`,
+      extra: "",
     },
     "",
   );
 
-  console.log(card);
   const content = await render(
     join(Deno.cwd(), "src/partials", "content.html"),
     {},

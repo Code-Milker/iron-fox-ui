@@ -148,7 +148,7 @@ export const createComponent = () => {
   ) => {
     state = initializeState(stateFn); // Infer state type here
 
-    const setActions = <
+    const addActions = <
       TActions extends Record<
         string,
         (ctx: { state: TState }, ...args: any[]) => NonEmptyPartial<TState>
@@ -156,7 +156,11 @@ export const createComponent = () => {
     >(
       actionsObj: TActions,
     ) => {
-      actions = initializeActions(actionsObj, state); // Automatically inject `ctx` into actions
+      // Merge new actions into existing ones
+      actions = {
+        ...actions,
+        ...initializeActions(actionsObj, state), // Dynamically add actions
+      };
 
       const build = () => ({
         state: state as TState, // Preserve inferred type
@@ -168,14 +172,15 @@ export const createComponent = () => {
         },
       });
 
-      return { build };
+      return { build, addActions };
     };
 
     const build = () => ({
       state: state as TState, // Ensure correct type is preserved
+      actions, // Include dynamic actions
     });
 
-    return { setActions, build };
+    return { addActions, build };
   };
 
   return { setState };

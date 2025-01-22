@@ -26,14 +26,22 @@ router.get("/fox-trace", async (ctx) => {
     `,
       placeholder: "Enter your address or transaction hash",
       buttonText: "trace",
+      sum: 0,
     })).setActions({
-      do: (state) => {
-        return {};
-      },
-      doMore: (state) => {
-        return { "buttonText": "" };
+      addSum: (ctx, input) => {
+        ctx.state;
+        return { sum: ctx.state.sum + input };
       },
     }).build();
+
+  console.log(comp.state);
+  console.log(comp.actions.addSum(2));
+  console.log(comp.state);
+  console.log(comp.actions.addSum(2));
+  console.log(comp.state);
+  console.log(comp.actions.addSum(2));
+  console.log(comp.state);
+  // comp.actions.addSum(3);
 });
 
 export default router;

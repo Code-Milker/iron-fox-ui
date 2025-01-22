@@ -96,49 +96,87 @@ export async function renderPage(
 // };
 //
 //
+// type NonEmptyPartial<T> = {
+//   [K in keyof T]-?: { [P in K]: T[P] } & Partial<T>;
+// }[keyof T];
 type NonEmptyPartial<T> = {
   [K in keyof T]-?: { [P in K]: T[P] } & Partial<T>;
 }[keyof T];
-export const createComponent = () => {
-  let state: unknown;
-  let actions: unknown;
 
-  const component = {
-    setState: <TState extends Record<string, unknown>>(
-      stateFn: () => TState,
-    ) => {
-      state = stateFn();
-      return {
-        setActions: <
-          TActions extends Record<
-            string,
-            (state: TState, ...args: any[]) => NonEmptyPartial<TState>
-          >,
-        >(
-          actionsObj: TActions,
-        ) => {
-          actions = Object.keys(actionsObj).reduce((acc, key) => {
-            // @ts-ignore
-            acc[key] = (...args: any[]) => {
-              const partialState = actionsObj[key](state as TState, ...args);
-              Object.assign(state as TState, partialState); // Merge the partial state into the current state
-            };
-            return acc;
-          }, {} as TActions);
+// Function to initialize state
+const initializeState = <TState extends Record<string, unknown>>(
+  stateFn: () => TState,
+): TState => {
+  return stateFn();
+};
 
-          return {
-            build: () => ({
-              state: state as TState,
-              actions: actions as TActions,
-            }),
-          };
-        },
-        build: () => ({
-          state: state as TState,
-        }),
+// Function to initialize actions
+const initializeActions = <
+  TState extends Record<string, unknown>,
+  TActions extends Record<string, (...args: any[]) => NonEmptyPartial<TState>>,
+>(
+  actionsObj: TActions,
+  state: TState,
+): {
+  [K in keyof TActions]: (
+    ...args: Parameters<TActions[K]> extends [any, ...infer P] ? P : never
+  ) => void;
+} => {
+  return Object.keys(actionsObj).reduce(
+    (acc, key) => {
+      acc[key] = (...args: any[]) => {
+        const partialState = actionsObj[key]({ state }, ...args); // Automatically inject `ctx`
+        Object.assign(state, partialState); // Merge the returned partial state into the existing state
       };
+      return acc;
     },
+    {} as {
+      [K in keyof TActions]: (
+        ...args: Parameters<TActions[K]> extends [any, ...infer P] ? P : never
+      ) => void;
+    },
+  );
+};
+
+// Main builder function
+export const createComponent = () => {
+  let state: any; // Temporarily use `any` until inferred by `setState`
+  let actions: Record<string, (...args: any[]) => void> = {};
+
+  const setState = <TState extends Record<string, unknown>>(
+    stateFn: () => TState,
+  ) => {
+    state = initializeState(stateFn); // Infer state type here
+
+    const setActions = <
+      TActions extends Record<
+        string,
+        (ctx: { state: TState }, ...args: any[]) => NonEmptyPartial<TState>
+      >,
+    >(
+      actionsObj: TActions,
+    ) => {
+      actions = initializeActions(actionsObj, state); // Automatically inject `ctx` into actions
+
+      const build = () => ({
+        state: state as TState, // Preserve inferred type
+        actions: actions as {
+          [K in keyof TActions]: (
+            ...args: Parameters<TActions[K]> extends [any, ...infer P] ? P
+              : never
+          ) => void;
+        },
+      });
+
+      return { build };
+    };
+
+    const build = () => ({
+      state: state as TState, // Ensure correct type is preserved
+    });
+
+    return { setActions, build };
   };
 
-  return component;
+  return { setState };
 };

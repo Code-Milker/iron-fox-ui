@@ -1,5 +1,7 @@
-import { transpile } from "https://deno.land/x/emit@0.40.0/mod.ts";
+import { bundle, transpile } from "https://deno.land/x/emit@0.40.0/mod.ts";
+
 import { join } from "https://deno.land/std/path/mod.ts";
+import { delay } from "./utils.ts";
 export async function render(
   filePath: string,
   partials: Record<string, string>,
@@ -32,12 +34,17 @@ export async function render(
 
   // Transpile TypeScript to JavaScript
   if (tsFilePath !== "") {
-    const tsCode = await Deno.readTextFile(tsFilePath);
+    await delay(500);
+    // const tsCode = await Deno.readTextFile(tsFilePath);
     const url = new URL(tsFilePath, import.meta.url);
-    const result = await transpile(url);
-    const jsCode = result.get(url.href);
+    const result = await bundle(url);
+    const jsCode = result.code;
+    console.log(jsCode);
     // Inject transpiled JavaScript
-    template = template.replaceAll("{{scripts}}", `<script>${jsCode}</script>`);
+    template = template.replaceAll(
+      "{{scripts}}",
+      `\n<script>${jsCode}</script>`,
+    );
   }
 
   return template;
@@ -50,11 +57,9 @@ export async function renderPage(
   tsFilePath: string,
 ): Promise<string> {
   const page = await render(path, partials, vars, tsFilePath);
-
   const filePath = join(Deno.cwd(), "src/public", "index.html");
   const cssPath = join(Deno.cwd(), "src/public", "styles.css");
   const tsPath = join(Deno.cwd(), "src/public", "test.ts");
-
   const cssContent = await Deno.readTextFile(cssPath);
   const content = await render(
     filePath,
@@ -72,3 +77,68 @@ export async function renderPage(
 
   return content;
 }
+
+// export const createComponent = () => {
+//   let state: unknown; // Initial state is unknown before `setState` is called.
+//
+//   const component = {
+//     setState: <T extends Record<string, unknown>>(stateFn: () => T) => {
+//       state = stateFn(); // Infer the state type.
+//       return {
+//         build: () => ({
+//           state: state as T, // Cast state to the inferred type.
+//         }),
+//       };
+//     },
+//   };
+//
+//   return component;
+// };
+//
+//
+type NonEmptyPartial<T> = {
+  [K in keyof T]-?: { [P in K]: T[P] } & Partial<T>;
+}[keyof T];
+export const createComponent = () => {
+  let state: unknown;
+  let actions: unknown;
+
+  const component = {
+    setState: <TState extends Record<string, unknown>>(
+      stateFn: () => TState,
+    ) => {
+      state = stateFn();
+      return {
+        setActions: <
+          TActions extends Record<
+            string,
+            (state: TState, ...args: any[]) => NonEmptyPartial<TState>
+          >,
+        >(
+          actionsObj: TActions,
+        ) => {
+          actions = Object.keys(actionsObj).reduce((acc, key) => {
+            // @ts-ignore
+            acc[key] = (...args: any[]) => {
+              const partialState = actionsObj[key](state as TState, ...args);
+              Object.assign(state as TState, partialState); // Merge the partial state into the current state
+            };
+            return acc;
+          }, {} as TActions);
+
+          return {
+            build: () => ({
+              state: state as TState,
+              actions: actions as TActions,
+            }),
+          };
+        },
+        build: () => ({
+          state: state as TState,
+        }),
+      };
+    },
+  };
+
+  return component;
+};

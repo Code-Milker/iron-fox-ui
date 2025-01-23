@@ -3,22 +3,11 @@ import { Router } from "https://deno.land/x/oak/mod.ts";
 import { createComponent } from "../utils/moomoo/component.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
-  // const product = await getProduct();
-  // const features = await getFeatures();
-  // const pricing = await getPricing();
-  // const main = await renderPage(
-  //   join(Deno.cwd(), "src/partials", "fox-trace.html"),
-  //   {},
-  //   {
-  //     // product,
-  //     // features,
-  //     // pricing,
-  //   },
-  //   // "",
-  //   join(Deno.cwd(), "src/routes", "fox-trace-controller.ts"), // Pass the TypeScript file path
-  // );
-
-  const comp = createComponent()
+  // const app = createApp() // sets global data in local storage, what else?
+  // const route = createRoute() // sets page data in local storage and router info, what else?
+  // route.setPage(comp)
+  // app.setRoutes([route])
+  const comp = createComponent().addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
       body: `
@@ -27,7 +16,9 @@ router.get("/fox-trace", async (ctx) => {
       placeholder: "Enter your address or transaction hash",
       buttonText: "trace",
       sum: 0,
-    })).addActions({
+      cheese: "gouda",
+    }))
+    .addActions({
       addSum: (ctx, input) => {
         return { sum: ctx.state.sum + input };
       },
@@ -37,40 +28,27 @@ router.get("/fox-trace", async (ctx) => {
       resetSum: ({ state }) => {
         return { sum: 0 }; // Reset `sum` to 0
       },
-    }).addSideEffects({
-      logTitle: (state) => {
-        console.log("Side Effect - Title:", state.title);
+    })
+    .addSideEffects({
+      logTitle: (ctx) => {
+        console.log("Side Effect - Title:", ctx.state.title);
       },
       logSum: (state) => {
-        console.log("Side Effect - Sum:", state.sum);
+        console.log("Side Effect - Sum:", ctx.state.sum);
       },
-    }).setTemplate(({ state, actions }) => `
+    })
+    .setTemplate((ctx) => `
     <div>
-      <h1>${state.placeholder}</h1>
-      <p>${actions.resetSum}</p>
+      <h1>${ctx.state.sum}</h1>
+      <p>${ctx.actions.resetSum}</p>
       <button onclick="actions.addSum(5)">Add 5</button>
       <button onclick="actions.subtractSum(2)">Subtract 2</button>
       <button onclick="actions.resetSum()">Reset</button>
-      <p>Current Sum: ${state.sum}</p>
+      <p>Current Sum: ${ctx.state.sum}</p>
     </div>
   `)
     .build();
-
-  console.log(JSON.stringify(comp, null, 2));
-  comp.actions.addSum(2);
-  console.log(JSON.stringify(comp, null, 2));
-  comp.actions.addSum(2);
-  console.log(JSON.stringify(comp, null, 2));
-  comp.actions.resetSum();
-  console.log(JSON.stringify(comp, null, 2));
-  console.log(comp.template());
-
-  comp.actions.addSum(2);
-  comp.actions.addSum(2);
-  comp.actions.addSum(2);
-  comp.actions.addSum(2);
-  comp.sideEffects.logSum();
-  // comp.actions.addSum(3);
+  ctx.response.body = comp.template();
 });
 
 export default router;
@@ -223,3 +201,17 @@ export default router;
 //   );
 //   return content;
 // export default router;
+// const product = await getProduct();
+// const features = await getFeatures();
+// const pricing = await getPricing();
+// const main = await renderPage(
+//   join(Deno.cwd(), "src/partials", "fox-trace.html"),
+//   {},
+//   {
+//     // product,
+//     // features,
+//     // pricing,
+//   },
+//   // "",
+//   join(Deno.cwd(), "src/routes", "fox-trace-controller.ts"), // Pass the TypeScript file path
+// );

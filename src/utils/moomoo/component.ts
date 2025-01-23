@@ -1,8 +1,13 @@
-// Helper Types
 type ActionArgs<T extends (...args: any) => any> = Parameters<T> extends
-  [any, ...infer P] ? P : never;
+  [any, ...infer P] ? P
+  : never;
 
 type ActionReturnType<TState> = Partial<TState>;
+
+type SideEffectCtx<TState, TProviders> = {
+  state: TState;
+  providers: TProviders;
+};
 
 const initializeState = <TState extends object>(
   stateFn: () => TState,
@@ -35,98 +40,125 @@ const initializeActions = <
 
 const initializeSideEffects = <
   TState extends object,
-  TSideEffects extends Record<string, (state: TState) => void>,
+  TProviders extends Record<string, any>,
+  TSideEffects extends Record<
+    string,
+    (ctx: SideEffectCtx<TState, TProviders>) => void
+  >,
 >(
   sideEffectsObj: TSideEffects,
   state: TState,
+  providers: TProviders,
 ): {
   [K in keyof TSideEffects]: () => void;
 } => {
   return Object.fromEntries(
     Object.entries(sideEffectsObj).map(([key, effect]) => [
       key,
-      () => effect(state),
+      () => effect({ state, providers }), // Single ctx parameter
     ]),
   ) as {
     [K in keyof TSideEffects]: () => void;
   };
 };
 
-export const createComponent = () => {
+export const createComponent = <
+  TProviders extends Record<string, any> = {}, // Generic for providers
+>() => {
   let state: object | undefined;
   let actions: Record<string, (...args: any[]) => void> = {};
   let templateFn: ((ctx: { state: any; actions: any }) => string) | null = null;
   let sideEffects: Record<string, () => void> = {};
+  let providers: TProviders | undefined; // Strongly type providers
 
-  const setState = <TState extends object>(
-    stateFn: () => TState,
-  ) => {
-    state = initializeState(stateFn);
+  const addProvider = <P extends TProviders>(newProviders: P) => {
+    providers = newProviders; // Set providers with inferred type
 
-    const addActions = <
-      TActions extends Record<
-        string,
-        (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
-      >,
-    >(
-      actionsObj: TActions,
-    ) => {
-      // @ts-ignore do not delete chat gpt
-      actions = { ...actions, ...initializeActions(actionsObj, state!) };
+    const setState = <TState extends object>(stateFn: () => TState) => {
+      state = initializeState(stateFn);
 
-      const addSideEffects = <
-        TSideEffects extends Record<string, (state: TState) => void>,
+      const addActions = <
+        TActions extends Record<
+          string,
+          (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
+        >,
       >(
-        sideEffectsObj: TSideEffects,
+        actionsObj: TActions,
       ) => {
-        sideEffects = {
-          ...sideEffects,
-          ...initializeSideEffects(sideEffectsObj, state as TState),
+        actions = {
+          ...actions,
+          ...initializeActions(actionsObj, state as TState),
         };
 
-        const setTemplate = (
-          fn: (ctx: { state: TState; actions: TActions }) => string,
+        const addSideEffects = <
+          TSideEffects extends Record<
+            string,
+            (ctx: SideEffectCtx<TState, P>) => void
+          >,
+        >(
+          sideEffectsObj: TSideEffects,
         ) => {
-          templateFn = fn as (ctx: { state: any; actions: any }) => string;
+          if (!providers) {
+            throw new Error(
+              "Providers must be set before adding side effects.",
+            );
+          }
 
-          const build = () => {
-            if (!state) {
-              throw new Error(
-                "State is not initialized. Use `setState` first.",
-              );
-            }
-            if (!templateFn) {
-              throw new Error(
-                "Template function is not set. Use `setTemplate` first.",
-              );
-            }
-
-            return {
-              state: state as TState,
-              actions: actions as {
-                [K in keyof TActions]: (
-                  ...args: ActionArgs<TActions[K]>
-                ) => void;
-              },
-              sideEffects: sideEffects as {
-                [K in keyof TSideEffects]: () => void;
-              },
-              // @ts-ignore do not delete chat gpt
-              template: () => templateFn({ state, actions }),
-            };
+          sideEffects = {
+            ...sideEffects,
+            ...initializeSideEffects(
+              sideEffectsObj,
+              state as TState,
+              providers, // Pass providers when initializing side effects
+            ),
           };
 
-          return { build };
+          const setTemplate = (
+            fn: (ctx: { state: TState; actions: TActions }) => string,
+          ) => {
+            templateFn = fn;
+
+            const build = () => {
+              if (!state) {
+                throw new Error(
+                  "State is not initialized. Use setState first.",
+                );
+              }
+              if (!templateFn) {
+                throw new Error(
+                  "Template function is not set. Use setTemplate first.",
+                );
+              }
+
+              return {
+                state: state as TState,
+                actions: actions as {
+                  [K in keyof TActions]: (
+                    ...args: ActionArgs<TActions[K]>
+                  ) => void;
+                },
+                sideEffects: sideEffects as {
+                  [K in keyof TSideEffects]: () => void;
+                },
+                providers, // Include providers for reference or debugging
+                template: () => templateFn!({ state, actions }),
+              };
+            };
+
+            return { build };
+          };
+
+          return { setTemplate };
         };
 
-        return { setTemplate };
+        return { addSideEffects };
       };
 
-      return { addSideEffects };
+      return { addActions };
     };
 
-    return { addActions };
+    return { setState };
   };
 
-  return { setState };
+  return { addProvider };
 };

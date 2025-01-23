@@ -1,3 +1,5 @@
+import { bundle, transpile } from "https://deno.land/x/emit@0.40.0/mod.ts";
+
 type ActionArgs<T extends (...args: any) => any> = Parameters<T> extends
   [any, ...infer P] ? P
   : never;
@@ -92,6 +94,8 @@ export const createComponent = <
           ...initializeActions(actionsObj, state as TState),
         };
 
+        const actionNames = Object.keys(actionsObj); // Extract action names
+
         const addSideEffects = <
           TSideEffects extends Record<
             string,
@@ -109,6 +113,7 @@ export const createComponent = <
           sideEffects = {
             ...sideEffects,
             ...initializeSideEffects(
+              // @ts-ignore
               sideEffectsObj,
               state as TState,
               providers, // Pass providers when initializing side effects
@@ -119,8 +124,8 @@ export const createComponent = <
             fn: (
               ctx: {
                 state: TState;
-                actions: TActions;
-                sideEffects: TSideEffects;
+                actions: Record<keyof TActions, string>; // Use action names here
+                sideEffects: Record<keyof TSideEffects, string>; // Use side effect names here
               },
             ) => string,
           ) => {
@@ -144,17 +149,79 @@ export const createComponent = <
                   [K in keyof TActions]: (
                     ...args: ActionArgs<TActions[K]>
                   ) => void;
-                },
+                }, // Keep functions in comp.actions
                 sideEffects: sideEffects as {
                   [K in keyof TSideEffects]: () => void;
-                },
+                }, // Keep functions in comp.sideEffects
                 providers, // Include providers for reference or debugging
-                template: () => templateFn!({ state, actions, sideEffects }),
+                template: () =>
+                  templateFn!({
+                    state,
+                    actions: actionNames.reduce((acc, name) => {
+                      acc[name as keyof TActions] = `${name}()`; // Add () to action names
+                      return acc;
+                    }, {} as Record<keyof TActions, string>), // Pass action names with () to template
+                    sideEffects: Object.keys(sideEffects).reduce(
+                      (acc, name) => {
+                        acc[name as keyof TSideEffects] = `${name}()`; // Add () to side effect names
+                        return acc;
+                      },
+                      {} as Record<keyof TSideEffects, string>,
+                    ), // Pass side effect names with () to template
+                  }),
               };
             };
 
             return { render };
           };
+          // const setTemplate = (
+          //   fn: (
+          //     ctx: {
+          //       state: TState;
+          //       actions: Record<keyof TActions, string>; // Use action names here
+          //       sideEffects: TSideEffects;
+          //     },
+          //   ) => string,
+          // ) => {
+          //   templateFn = fn;
+          //
+          //   const render = () => {
+          //     if (!state) {
+          //       throw new Error(
+          //         "State is not initialized. Use setState first.",
+          //       );
+          //     }
+          //     if (!templateFn) {
+          //       throw new Error(
+          //         "Template function is not set. Use setTemplate first.",
+          //       );
+          //     }
+          //
+          //     return {
+          //       state: state as TState,
+          //       actions: actions as {
+          //         [K in keyof TActions]: (
+          //           ...args: ActionArgs<TActions[K]>
+          //         ) => void;
+          //       }, // Keep functions in comp.actions
+          //       sideEffects: sideEffects as {
+          //         [K in keyof TSideEffects]: () => void;
+          //       },
+          //       providers, // Include providers for reference or debugging
+          //       template: () =>
+          //         templateFn!({
+          //           state,
+          //           actions: actionNames.reduce((acc, name) => {
+          //             acc[name as keyof TActions] = name;
+          //             return acc;
+          //           }, {} as Record<keyof TActions, string>), // Pass action names to template
+          //           sideEffects,
+          //         }),
+          //     };
+          //   };
+          //
+          //   return { render };
+          // };
 
           return { setTemplate };
         };
@@ -170,3 +237,81 @@ export const createComponent = <
 
   return { addProvider };
 };
+export interface componentRenderArgs {
+  markdown: string;
+}
+
+export type RenderedComponent<
+  TState extends object,
+  TActions extends Record<string, (...args: any[]) => any>,
+  TSideEffects extends Record<string, () => void>,
+  TProviders extends Record<string, any> | undefined = undefined,
+> = {
+  state: TState;
+  actions: {
+    [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
+  };
+  sideEffects: {
+    [K in keyof TSideEffects]: () => void;
+  };
+  providers: TProviders;
+  template: () => string;
+};
+type AnyComponent = RenderedComponent<
+  object, // The state can be any object
+  Record<string, (...args: any[]) => void>, // The actions can be any set of functions
+  Record<string, () => void>, // The sideEffects can be any set of functions
+  Record<string, any> | undefined // Providers can be any object or undefined
+>;
+export async function componentRender(
+  component: AnyComponent,
+  // markdown: string,
+  // partials: Record<string, string>,
+  // vars: Record<string, string>,
+  // tsFilePath: string,
+): Promise<string> {
+  // component.
+  // Inject variables
+  // for (const [key, value] of Object.entries(vars)) {
+  //   template = template.replaceAll(`{{${key}}}`, value);
+  // }
+
+  // Transpile TypeScript to JavaScript
+  // const tsCode = await Deno.readTextFile(tsFilePath);
+  // const url = new URL(tsFilePath, import.meta.url);
+  // const result = await transpile('console.log(`hi`)');
+  // result.
+  // const jsCode = result.code;
+  // console.log(jsCode);
+  // Inject transpiled JavaScript
+  // template = template.replaceAll(
+  //   "{{scripts}}",
+  //   `\n<script>${jsCode}</script>`,
+  // );
+  return "";
+}
+export async function transpileFromString(tsCode: string): Promise<string> {
+  // Define a virtual module specifier
+  const specifier = "data:application/typescript;base64," + btoa(tsCode);
+
+  // Transpile the provided TypeScript code
+  const result = await transpile(specifier);
+
+  // Retrieve the transpiled JavaScript code
+  const transpiledCode = result.get(specifier);
+
+  if (!transpiledCode) {
+    throw new Error("Failed to transpile the provided TypeScript code.");
+  }
+
+  return transpiledCode;
+}
+
+// Example usage
+const tsCode = `
+  export const add = (a: number, b: number) => a + b;
+  console.log(add(2, 3));
+`;
+
+const transpiledCode = await transpileFromString(tsCode);
+console.log("Transpiled Code:", transpiledCode);

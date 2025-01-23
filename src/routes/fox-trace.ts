@@ -1,12 +1,12 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { createComponent } from "../utils/moomoo/component.ts";
+import {
+  componentRender,
+  createComponent,
+  transpileFromString,
+} from "../utils/moomoo/component.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
-  // const app = createApp() // sets global data in local storage, what else?
-  // const route = createRoute() // sets page data in local storage and router info, what else?
-  // route.setPage(comp)
-  // app.setRoutes([route])
   const comp = createComponent().addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
@@ -40,15 +40,21 @@ router.get("/fox-trace", async (ctx) => {
     })
     .setTemplate((ctx) => `
     <div>
-      <h1>${ctx}</h1>
-      <p>${ctx}</p>
-      <button onclick="actions.addSum()">Add 5</button>
-      <button onclick="actions.subtractSum()">Subtract 2</button>
-      <button onclick="actions.resetSum()">Reset</button>
+      <h1></h1>
+      <p>${ctx.state.body}</p>
+      <button onclick=${ctx.actions.addSum}">Add 5</button>
+      <button onclick=${ctx.actions.subtractSum}">Subtract 2</button>
+      <button onclick=${ctx.actions.resetSum}">Reset</button>
+      <button onclick=${ctx.sideEffects.logSum}">Reset</button>
       <p>Current Sum: ${ctx.state.sum}</p>
     </div>
   `)
     .render();
+  // componentRender(comp);
+  // const res = await transpileFromString(JSON.stringify(comp.state));
+  console.log(comp.state);
+  console.log(comp.actions);
+  console.log(comp.template);
   ctx.response.body = comp.template();
 });
 

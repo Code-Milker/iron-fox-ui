@@ -29,27 +29,34 @@ router.get("/fox-trace", async (ctx) => {
       sum: 0,
     })).addActions({
       addSum: (ctx, input) => {
-        ctx.state;
         return { sum: ctx.state.sum + input };
       },
       subtractSum: (ctx, input) => {
-        ctx.state;
         return { sum: ctx.state.sum - input };
       },
       resetSum: ({ state }) => {
         return { sum: 0 }; // Reset `sum` to 0
       },
-    }).build();
+    }).setTemplate(({ state, actions }) => `
+    <div>
+      <h1>${state.placeholder}</h1>
+      <p>${actions.resetSum}</p>
+      <button onclick="actions.addSum(5)">Add 5</button>
+      <button onclick="actions.subtractSum(2)">Subtract 2</button>
+      <button onclick="actions.resetSum()">Reset</button>
+      <p>Current Sum: ${state.sum}</p>
+    </div>
+  `)
+    .build();
 
-  console.log(comp.state);
-  console.log(comp.actions.addSum(2));
-  console.log(comp.state);
-  console.log(comp.actions.subtractSum(2));
-  console.log(comp.state);
-  console.log(comp.actions.subtractSum(2));
-  console.log(comp.state);
+  console.log(JSON.stringify(comp, null, 2));
+  comp.actions.addSum(2);
+  console.log(JSON.stringify(comp, null, 2));
+  comp.actions.addSum(2);
+  console.log(JSON.stringify(comp, null, 2));
   comp.actions.resetSum();
-  console.log(comp.state);
+  console.log(JSON.stringify(comp, null, 2));
+  console.log(comp.template());
   // comp.actions.addSum(3);
 });
 

@@ -77,110 +77,94 @@ export async function renderPage(
 
   return content;
 }
+// Helper Types
+type ActionArgs<T> = Parameters<T> extends [any, ...infer P] ? P : never;
 
-// export const createComponent = () => {
-//   let state: unknown; // Initial state is unknown before `setState` is called.
-//
-//   const component = {
-//     setState: <T extends Record<string, unknown>>(stateFn: () => T) => {
-//       state = stateFn(); // Infer the state type.
-//       return {
-//         build: () => ({
-//           state: state as T, // Cast state to the inferred type.
-//         }),
-//       };
-//     },
-//   };
-//
-//   return component;
-// };
-//
-//
-// type NonEmptyPartial<T> = {
-//   [K in keyof T]-?: { [P in K]: T[P] } & Partial<T>;
-// }[keyof T];
-type NonEmptyPartial<T> = {
-  [K in keyof T]-?: { [P in K]: T[P] } & Partial<T>;
-}[keyof T];
+type ActionReturnType<TState> = Partial<TState>;
 
-// Function to initialize state
-const initializeState = <TState extends Record<string, unknown>>(
+// Helper function to initialize state
+const initializeState = <TState extends object>(
   stateFn: () => TState,
-): TState => {
-  return stateFn();
-};
+): TState => stateFn();
 
-// Function to initialize actions
+// Helper function to initialize actions with strict typing
 const initializeActions = <
-  TState extends Record<string, unknown>,
-  TActions extends Record<string, (...args: any[]) => NonEmptyPartial<TState>>,
+  TState extends object,
+  TActions extends Record<
+    string,
+    (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState> // Use extracted type
+  >,
 >(
   actionsObj: TActions,
   state: TState,
 ): {
-  [K in keyof TActions]: (
-    ...args: Parameters<TActions[K]> extends [any, ...infer P] ? P : never
-  ) => void;
+  [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
 } => {
-  return Object.keys(actionsObj).reduce(
-    (acc, key) => {
-      acc[key] = (...args: any[]) => {
-        const partialState = actionsObj[key]({ state }, ...args); // Automatically inject `ctx`
-        Object.assign(state, partialState); // Merge the returned partial state into the existing state
-      };
-      return acc;
-    },
-    {} as {
-      [K in keyof TActions]: (
-        ...args: Parameters<TActions[K]> extends [any, ...infer P] ? P : never
-      ) => void;
-    },
-  );
+  return Object.fromEntries(
+    Object.entries(actionsObj).map(([key, action]) => [
+      key,
+      (...args: any[]) => {
+        const partialState = action({ state }, ...args);
+        Object.assign(state, partialState); // Merge updates into the state
+      },
+    ]),
+  ) as {
+    [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
+  };
 };
 
 // Main builder function
 export const createComponent = () => {
-  let state: any; // Temporarily use `any` until inferred by `setState`
+  let state: object | undefined; // Use `object` instead of Record<string, unknown>
   let actions: Record<string, (...args: any[]) => void> = {};
+  let templateFn: ((ctx: { state: any; actions: any }) => string) | null = null;
 
-  const setState = <TState extends Record<string, unknown>>(
+  const setState = <TState extends object>(
     stateFn: () => TState,
   ) => {
-    state = initializeState(stateFn); // Infer state type here
+    state = initializeState(stateFn);
 
     const addActions = <
       TActions extends Record<
         string,
-        (ctx: { state: TState }, ...args: any[]) => NonEmptyPartial<TState>
+        (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
       >,
     >(
       actionsObj: TActions,
     ) => {
-      // Merge new actions into existing ones
-      actions = {
-        ...actions,
-        ...initializeActions(actionsObj, state), // Dynamically add actions
+      actions = { ...actions, ...initializeActions(actionsObj, state!) };
+
+      const setTemplate = (
+        fn: (ctx: { state: TState; actions: TActions }) => string,
+      ) => {
+        templateFn = fn as (ctx: { state: any; actions: any }) => string;
+
+        const build = () => {
+          if (!state) {
+            throw new Error("State is not initialized. Use `setState` first.");
+          }
+          if (!templateFn) {
+            throw new Error(
+              "Template function is not set. Use `setTemplate` first.",
+            );
+          }
+
+          return {
+            state: state as TState,
+            actions: actions as {
+              [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
+            },
+            template: () => templateFn({ state, actions }), // Template callable
+          };
+        };
+
+        return { build };
       };
 
-      const build = () => ({
-        state: state as TState, // Preserve inferred type
-        actions: actions as {
-          [K in keyof TActions]: (
-            ...args: Parameters<TActions[K]> extends [any, ...infer P] ? P
-              : never
-          ) => void;
-        },
-      });
-
-      return { build, addActions };
+      return { setTemplate };
     };
 
-    const build = () => ({
-      state: state as TState, // Ensure correct type is preserved
-      actions, // Include dynamic actions
-    });
-
-    return { addActions, build };
+    return { addActions };
   };
 
   return { setState };

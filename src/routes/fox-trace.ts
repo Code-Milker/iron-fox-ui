@@ -16,14 +16,15 @@ router.get("/fox-trace", async (ctx) => {
       placeholder: "Enter your address or transaction hash",
       buttonText: "trace",
       sum: 0,
+      userNumberInput: 0,
       cheese: "gouda",
     }))
     .addActions({
-      addSum: (ctx, input) => {
-        return { sum: ctx.state.sum + input };
+      addSum: (ctx) => {
+        return { sum: ctx.state.sum + ctx.state.userNumberInput };
       },
-      subtractSum: (ctx, input) => {
-        return { sum: ctx.state.sum - input };
+      subtractSum: (ctx) => {
+        return { sum: ctx.state.sum };
       },
       resetSum: ({ state }) => {
         return { sum: 0 }; // Reset `sum` to 0
@@ -39,10 +40,10 @@ router.get("/fox-trace", async (ctx) => {
     })
     .setTemplate((ctx) => `
     <div>
-      <h1>${ctx.sideEffects}</h1>
-      <p>${ctx.actions}</p>
-      <button onclick="actions.addSum(5)">Add 5</button>
-      <button onclick="actions.subtractSum(2)">Subtract 2</button>
+      <h1>${ctx}</h1>
+      <p>${ctx}</p>
+      <button onclick="actions.addSum()">Add 5</button>
+      <button onclick="actions.subtractSum()">Subtract 2</button>
       <button onclick="actions.resetSum()">Reset</button>
       <p>Current Sum: ${ctx.state.sum}</p>
     </div>

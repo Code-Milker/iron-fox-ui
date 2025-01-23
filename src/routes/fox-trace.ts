@@ -39,15 +39,15 @@ router.get("/fox-trace", async (ctx) => {
     })
     .setTemplate((ctx) => `
     <div>
-      <h1>${ctx.state.sum}</h1>
-      <p>${ctx.actions.resetSum}</p>
+      <h1>${ctx.sideEffects}</h1>
+      <p>${ctx.actions}</p>
       <button onclick="actions.addSum(5)">Add 5</button>
       <button onclick="actions.subtractSum(2)">Subtract 2</button>
       <button onclick="actions.resetSum()">Reset</button>
       <p>Current Sum: ${ctx.state.sum}</p>
     </div>
   `)
-    .build();
+    .render();
   ctx.response.body = comp.template();
 });
 

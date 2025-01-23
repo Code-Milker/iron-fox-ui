@@ -67,7 +67,9 @@ export const createComponent = <
 >() => {
   let state: object | undefined;
   let actions: Record<string, (...args: any[]) => void> = {};
-  let templateFn: ((ctx: { state: any; actions: any }) => string) | null = null;
+  let templateFn:
+    | ((ctx: { state: any; actions: any; sideEffects: any }) => string)
+    | null = null;
   let sideEffects: Record<string, () => void> = {};
   let providers: TProviders | undefined; // Strongly type providers
 
@@ -114,11 +116,17 @@ export const createComponent = <
           };
 
           const setTemplate = (
-            fn: (ctx: { state: TState; actions: TActions }) => string,
+            fn: (
+              ctx: {
+                state: TState;
+                actions: TActions;
+                sideEffects: TSideEffects;
+              },
+            ) => string,
           ) => {
             templateFn = fn;
 
-            const build = () => {
+            const render = () => {
               if (!state) {
                 throw new Error(
                   "State is not initialized. Use setState first.",
@@ -141,11 +149,11 @@ export const createComponent = <
                   [K in keyof TSideEffects]: () => void;
                 },
                 providers, // Include providers for reference or debugging
-                template: () => templateFn!({ state, actions }),
+                template: () => templateFn!({ state, actions, sideEffects }),
               };
             };
 
-            return { build };
+            return { render };
           };
 
           return { setTemplate };

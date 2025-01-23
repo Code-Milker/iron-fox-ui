@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { render, renderPage } from "../utils/moo-moo.ts";
+import { render, renderPage } from "../utils/moomoo/moo-moo.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {

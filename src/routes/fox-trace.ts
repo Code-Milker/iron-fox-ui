@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { createComponent, render, renderPage } from "../utils/moo-moo.ts";
+import { createComponent } from "../utils/moomoo/component.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
   // const product = await getProduct();
@@ -37,6 +37,13 @@ router.get("/fox-trace", async (ctx) => {
       resetSum: ({ state }) => {
         return { sum: 0 }; // Reset `sum` to 0
       },
+    }).addSideEffects({
+      logTitle: (state) => {
+        console.log("Side Effect - Title:", state.title);
+      },
+      logSum: (state) => {
+        console.log("Side Effect - Sum:", state.sum);
+      },
     }).setTemplate(({ state, actions }) => `
     <div>
       <h1>${state.placeholder}</h1>
@@ -57,6 +64,12 @@ router.get("/fox-trace", async (ctx) => {
   comp.actions.resetSum();
   console.log(JSON.stringify(comp, null, 2));
   console.log(comp.template());
+
+  comp.actions.addSum(2);
+  comp.actions.addSum(2);
+  comp.actions.addSum(2);
+  comp.actions.addSum(2);
+  comp.sideEffects.logSum();
   // comp.actions.addSum(3);
 });
 

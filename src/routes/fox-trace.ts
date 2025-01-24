@@ -53,7 +53,7 @@ router.get("/fox-trace", async (ctx) => {
   // console.log(comp.state);
   // console.log(comp.actions);
   // console.log(comp.template);
-  ctx.response.body = `<html> <body>${comp}</body> </html>`;
+  ctx.response.body = `<html> <body>${comp.template()}</body> </html>`;
 });
 
 export default router;

@@ -52,6 +52,16 @@ const initializeSideEffects = <
   };
 };
 
+//     <div>
+//       <h1></h1>
+//       <p><span moo='{"key":"body"}' style="display: inline;">Provide the wallet address or transaction ID associated with the stolen funds to generate a detailed report on where you
+// r funds have gone and potential recovery options.</span></p>
+//       <button onclick="render(ctx.actions.addSum(ctx));">Add</button>
+//       <button onclick="render(ctx.actions.subtractSum(ctx));">Subtract</button>
+//       <button onclick="render(ctx.actions.resetSum(ctx));">Reset</button>
+//       <button onclick="ctx.sideEffects.logSum(ctx)">Log Sum</button>
+//       <p>Current Sum: <span moo='{"key":"sum"}' style="display: inline;">0</span></p>
+//     </div>
 export const createComponent = <
   TProviders extends Record<string, any> = {}, // Generic for providers
 >() => {
@@ -123,6 +133,12 @@ export const createComponent = <
                   "State is not initialized. Use setState first.",
                 );
               }
+
+              if (!providers) {
+                throw new Error(
+                  "State is not initialized. Use setState first.",
+                );
+              }
               if (!templateFn) {
                 throw new Error(
                   "Template function is not set. Use setTemplate first.",
@@ -139,6 +155,50 @@ export const createComponent = <
               const wrappedSideEffects = wrap(sideEffects, (key) => {
                 return `ctx.sideEffects.${String(key)}(ctx)`;
               });
+              const template = () => {
+                const scriptState = `const state = ${
+                  JSON.stringify(state, null, 1)
+                }\n`;
+                const scriptActions = `const actions = {\n${
+                  Object.keys(actions).map((key) => {
+                    return `${key}: ${actions[key].toString()},`;
+                  }).join("\n")
+                }\n}`;
+
+                const scriptSideEffects = `const sideEffects = {\n${
+                  Object.keys(sideEffects).map((key) => {
+                    return `${key}: ${sideEffects[key].toString()},`;
+                  }).join("\n")
+                }\n}`;
+                const scriptProviders = `const providers = {\n${
+                  Object.keys(providers!).map((key) => {
+                    return `${key}: ${providers![key].toString()},`;
+                  }).join("\n")
+                }\n}`;
+
+                const script =
+                  `<script>\n \n${scriptState}\n${scriptActions}\n${scriptSideEffects}\n
+const ctx = {state,actions, sideEffects }
+
+function render(updatedState) {
+ctx.state = {...ctx.state,  ...updatedState}
+  document.querySelectorAll("[moo]").forEach((el) => {
+    const mooConfig = JSON.parse(el.getAttribute("moo"));
+    const key = mooConfig.key;
+    if (key && key in ctx.state) {
+      el.textContent = ctx.state[key];
+    }
+  });}
+</script>\n`;
+                return [
+                  script,
+                  templateFn!({
+                    state: wrappedState,
+                    actions: wrappedActions,
+                    sideEffects: wrappedSideEffects,
+                  }),
+                ].join("");
+              };
               return {
                 state: state as TState,
                 actions: actions as {
@@ -150,12 +210,7 @@ export const createComponent = <
                   [K in keyof TSideEffects]: () => void;
                 }, // Keep functions in comp.sideEffects
                 providers, // Include providers for reference or debugging
-                template: () =>
-                  templateFn!({
-                    state: wrappedState,
-                    actions: wrappedActions,
-                    sideEffects: wrappedSideEffects,
-                  }),
+                template,
               };
             };
 

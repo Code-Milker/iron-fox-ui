@@ -82,8 +82,6 @@ export const createComponent = <
           ...initializeActions(actionsObj, state as TState),
         };
 
-        const actionNames = Object.keys(actionsObj); // Extract action names
-
         const addSideEffects = <
           TSideEffects extends Record<
             string,
@@ -130,17 +128,6 @@ export const createComponent = <
                   "Template function is not set. Use setTemplate first.",
                 );
               }
-              function wrap<T>(
-                obj: T,
-                markdownFn: (key: keyof T, value: T[keyof T]) => string,
-              ): Record<keyof T, string> {
-                // @ts-ignore
-                return Object.keys(obj).reduce((acc, key) => {
-                  const typedKey = key as keyof T;
-                  acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
-                  return acc;
-                }, {} as Record<keyof T, string>);
-              }
               const wrappedState = wrap(state, (key, value) => {
                 return `<span moo='${
                   JSON.stringify({ key })
@@ -174,54 +161,6 @@ export const createComponent = <
 
             return { render };
           };
-          // const setTemplate = (
-          //   fn: (
-          //     ctx: {
-          //       state: TState;
-          //       actions: Record<keyof TActions, string>; // Use action names here
-          //       sideEffects: TSideEffects;
-          //     },
-          //   ) => string,
-          // ) => {
-          //   templateFn = fn;
-          //
-          //   const render = () => {
-          //     if (!state) {
-          //       throw new Error(
-          //         "State is not initialized. Use setState first.",
-          //       );
-          //     }
-          //     if (!templateFn) {
-          //       throw new Error(
-          //         "Template function is not set. Use setTemplate first.",
-          //       );
-          //     }
-          //
-          //     return {
-          //       state: state as TState,
-          //       actions: actions as {
-          //         [K in keyof TActions]: (
-          //           ...args: ActionArgs<TActions[K]>
-          //         ) => void;
-          //       }, // Keep functions in comp.actions
-          //       sideEffects: sideEffects as {
-          //         [K in keyof TSideEffects]: () => void;
-          //       },
-          //       providers, // Include providers for reference or debugging
-          //       template: () =>
-          //         templateFn!({
-          //           state,
-          //           actions: actionNames.reduce((acc, name) => {
-          //             acc[name as keyof TActions] = name;
-          //             return acc;
-          //           }, {} as Record<keyof TActions, string>), // Pass action names to template
-          //           sideEffects,
-          //         }),
-          //     };
-          //   };
-          //
-          //   return { render };
-          // };
 
           return { setTemplate };
         };
@@ -343,11 +282,14 @@ export async function transpileFromString(tsCode: string): Promise<string> {
   return transpiledCode;
 }
 
-// Example usage
-const tsCode = `
-  export const add = (a: number, b: number) => a + b;
-  console.log(add(2, 3));
-`;
-
-const transpiledCode = await transpileFromString(tsCode);
-console.log("Transpiled Code:", transpiledCode);
+function wrap<T>(
+  obj: T,
+  markdownFn: (key: keyof T, value: T[keyof T]) => string,
+): Record<keyof T, string> {
+  // @ts-ignore
+  return Object.keys(obj).reduce((acc, key) => {
+    const typedKey = key as keyof T;
+    acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
+    return acc;
+  }, {} as Record<keyof T, string>);
+}

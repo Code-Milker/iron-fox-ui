@@ -24,21 +24,33 @@ const initializeActions = <
 >(
   actionsObj: TActions,
   state: TState,
-): {
-  [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
-} => {
-  return Object.fromEntries(
-    Object.entries(actionsObj).map(([key, action]) => [
-      key,
-      (...args: any[]) => {
-        const partialState = action({ state }, ...args);
-        Object.assign(state, partialState); // Merge updates into the state
-      },
-    ]),
-  ) as {
-    [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
-  };
+): TActions => {
+  return actionsObj; // Simply return the actions as they are, without modification
 };
+// const initializeActions = <
+//   TState extends object,
+//   TActions extends Record<
+//     string,
+//     (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
+//   >,
+// >(
+//   actionsObj: TActions,
+//   state: TState,
+// ): {
+//   [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
+// } => {
+//   return Object.fromEntries(
+//     Object.entries(actionsObj).map(([key, action]) => [
+//       key,
+//       (...args: any[]) => {
+//         const partialState = action({ state }, ...args);
+//         Object.assign(state, partialState); // Merge updates into the state
+//       },
+//     ]),
+//   ) as {
+//     [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
+//   };
+// };
 
 const initializeSideEffects = <
   TState extends object,
@@ -142,7 +154,15 @@ export const createComponent = <
                   "Template function is not set. Use setTemplate first.",
                 );
               }
-
+              const wrappedState = Object.keys(state).reduce((acc, key) => {
+                // @ts-ignore
+                acc[key] = `<span moo='${
+                  JSON.stringify({ key })
+                }' style="display: inline;">${
+                  // @ts-ignore
+                  state[key]}</span>`;
+                return acc;
+              }, {} as Record<keyof TState, string>);
               return {
                 state: state as TState,
                 actions: actions as {
@@ -156,14 +176,16 @@ export const createComponent = <
                 providers, // Include providers for reference or debugging
                 template: () =>
                   templateFn!({
-                    state,
+                    state: wrappedState,
                     actions: actionNames.reduce((acc, name) => {
-                      acc[name as keyof TActions] = `${name}()`; // Add () to action names
+                      acc[name as keyof TActions] =
+                        `render(ctx.actions.${name}(ctx));`; // Add () to action names
                       return acc;
                     }, {} as Record<keyof TActions, string>), // Pass action names with () to template
                     sideEffects: Object.keys(sideEffects).reduce(
                       (acc, name) => {
-                        acc[name as keyof TSideEffects] = `${name}()`; // Add () to side effect names
+                        acc[name as keyof TSideEffects] =
+                          `ctx.sideEffects.${name}(ctx)`; // Add () to side effect names
                         return acc;
                       },
                       {} as Record<keyof TSideEffects, string>,
@@ -257,19 +279,78 @@ export type RenderedComponent<
   providers: TProviders;
   template: () => string;
 };
+
 type AnyComponent = RenderedComponent<
   object, // The state can be any object
   Record<string, (...args: any[]) => void>, // The actions can be any set of functions
   Record<string, () => void>, // The sideEffects can be any set of functions
   Record<string, any> | undefined // Providers can be any object or undefined
 >;
-export async function componentRender(
+export async function renderComponentMarkdown(
   component: AnyComponent,
   // markdown: string,
   // partials: Record<string, string>,
   // vars: Record<string, string>,
   // tsFilePath: string,
 ): Promise<string> {
+  const ctx = {
+    state: component.state,
+    actions: component.actions,
+    sideEffects: component.sideEffects,
+    providers: component.providers,
+  };
+  function stringifyWithFunctions(obj: any): string {
+    return JSON.stringify(
+      obj,
+      (key, value) => {
+        if (typeof value === "function") {
+          let funcString = value.toString();
+          // Remove excessive spaces and newlines
+          funcString = funcString.replace(/\s+/g, " "); // Collapse all whitespace
+          funcString = funcString.trim(); // Trim leading and trailing spaces
+          console.log(funcString);
+          return funcString;
+        }
+        return value;
+      },
+      2, // No pretty-printing
+    );
+  }
+  // Clean the function body
+  const script = `<script> const ctx =${stringifyWithFunctions(ctx)}
+
+
+Object.keys(ctx.actions).forEach(function (key) {
+  const fnString = ctx.actions[key];
+  const start = fnString.indexOf("{") + 1;
+  const end = fnString.lastIndexOf("}");
+  const cleanedBody = fnString.substring(start, end).trim();
+  ctx.actions[key] = new Function("ctx", cleanedBody);
+});
+
+Object.keys(ctx.sideEffects).forEach((key) => {
+  const fnString = ctx.sideEffects[key];
+  ctx.sideEffects[key] = new Function(
+    "ctx",
+    fnString.replace(/^\(\)\s*=>\s*/, "").trim()
+  );
+});
+console.log(ctx);  
+function render(updatedState) {
+ctx.state = {...ctx.state,  ...updatedState}
+  document.querySelectorAll("[moo]").forEach((el) => {
+    const mooConfig = JSON.parse(el.getAttribute("moo"));
+    const key = mooConfig.key;
+    if (key && key in ctx.state) {
+      el.textContent = ctx.state[key];
+    }
+  });
+  }</script>`;
+  // const renderedComponent = [
+  //   `const state =${JSON.stringify(component.state, null, 0)}`,
+  //   `const actions =${component.actions}`,
+  // ];
+  // console.log(renderedComponent);
   // component.
   // Inject variables
   // for (const [key, value] of Object.entries(vars)) {
@@ -288,7 +369,7 @@ export async function componentRender(
   //   "{{scripts}}",
   //   `\n<script>${jsCode}</script>`,
   // );
-  return "";
+  return [script, component.template()].join("/n");
 }
 export async function transpileFromString(tsCode: string): Promise<string> {
   // Define a virtual module specifier

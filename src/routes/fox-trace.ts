@@ -1,8 +1,8 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import {
-  componentRender,
   createComponent,
+  renderComponentMarkdown,
   transpileFromString,
 } from "../utils/moomoo/component.ts";
 const router = new Router();
@@ -10,13 +10,12 @@ router.get("/fox-trace", async (ctx) => {
   const comp = createComponent().addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
-      body: `
-      Provide the wallet address or transaction ID associated with the stolen funds to generate a detailed report on where your funds have gone and potential recovery options.
-    `,
+      body:
+        `Provide the wallet address or transaction ID associated with the stolen funds to generate a detailed report on where your funds have gone and potential recovery options.`,
       placeholder: "Enter your address or transaction hash",
       buttonText: "trace",
       sum: 0,
-      userNumberInput: 0,
+      userNumberInput: 1,
       cheese: "gouda",
     }))
     .addActions({
@@ -24,17 +23,17 @@ router.get("/fox-trace", async (ctx) => {
         return { sum: ctx.state.sum + ctx.state.userNumberInput };
       },
       subtractSum: (ctx) => {
-        return { sum: ctx.state.sum };
+        return { sum: ctx.state.sum - 2 };
       },
-      resetSum: ({ state }) => {
-        return { sum: 0 }; // Reset `sum` to 0
+      resetSum: (ctx) => {
+        return { sum: 0 };
       },
     })
     .addSideEffects({
       logTitle: (ctx) => {
         console.log("Side Effect - Title:", ctx.state.title);
       },
-      logSum: (state) => {
+      logSum: (ctx) => {
         console.log("Side Effect - Sum:", ctx.state.sum);
       },
     })
@@ -42,20 +41,20 @@ router.get("/fox-trace", async (ctx) => {
     <div>
       <h1></h1>
       <p>${ctx.state.body}</p>
-      <button onclick=${ctx.actions.addSum}">Add 5</button>
-      <button onclick=${ctx.actions.subtractSum}">Subtract 2</button>
-      <button onclick=${ctx.actions.resetSum}">Reset</button>
-      <button onclick=${ctx.sideEffects.logSum}">Reset</button>
+      <button onclick="${ctx.actions.addSum}">Add</button>
+      <button onclick="${ctx.actions.subtractSum}">Subtract</button>
+      <button onclick="${ctx.actions.resetSum}">Reset</button>
+      <button onclick="${ctx.sideEffects.logSum}">Log Sum</button>
       <p>Current Sum: ${ctx.state.sum}</p>
     </div>
-  `)
-    .render();
-  // componentRender(comp);
+  `).render();
+  const markdown = await renderComponentMarkdown(comp);
   // const res = await transpileFromString(JSON.stringify(comp.state));
-  console.log(comp.state);
-  console.log(comp.actions);
-  console.log(comp.template);
-  ctx.response.body = comp.template();
+  // console.log(comp.state);
+  // console.log(comp.actions);
+  // console.log(comp.template);
+  console.log({ markdown });
+  ctx.response.body = `<html> <body>${markdown}</body> </html>`;
 });
 
 export default router;

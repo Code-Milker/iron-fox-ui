@@ -3,7 +3,6 @@ import { Router } from "https://deno.land/x/oak/mod.ts";
 import {
   createComponent,
   renderComponentMarkdown,
-  transpileFromString,
 } from "../utils/moomoo/component.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {

@@ -27,30 +27,6 @@ const initializeActions = <
 ): TActions => {
   return actionsObj; // Simply return the actions as they are, without modification
 };
-// const initializeActions = <
-//   TState extends object,
-//   TActions extends Record<
-//     string,
-//     (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
-//   >,
-// >(
-//   actionsObj: TActions,
-//   state: TState,
-// ): {
-//   [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
-// } => {
-//   return Object.fromEntries(
-//     Object.entries(actionsObj).map(([key, action]) => [
-//       key,
-//       (...args: any[]) => {
-//         const partialState = action({ state }, ...args);
-//         Object.assign(state, partialState); // Merge updates into the state
-//       },
-//     ]),
-//   ) as {
-//     [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
-//   };
-// };
 
 const initializeSideEffects = <
   TState extends object,
@@ -346,29 +322,6 @@ ctx.state = {...ctx.state,  ...updatedState}
     }
   });
   }</script>`;
-  // const renderedComponent = [
-  //   `const state =${JSON.stringify(component.state, null, 0)}`,
-  //   `const actions =${component.actions}`,
-  // ];
-  // console.log(renderedComponent);
-  // component.
-  // Inject variables
-  // for (const [key, value] of Object.entries(vars)) {
-  //   template = template.replaceAll(`{{${key}}}`, value);
-  // }
-
-  // Transpile TypeScript to JavaScript
-  // const tsCode = await Deno.readTextFile(tsFilePath);
-  // const url = new URL(tsFilePath, import.meta.url);
-  // const result = await transpile('console.log(`hi`)');
-  // result.
-  // const jsCode = result.code;
-  // console.log(jsCode);
-  // Inject transpiled JavaScript
-  // template = template.replaceAll(
-  //   "{{scripts}}",
-  //   `\n<script>${jsCode}</script>`,
-  // );
   return [script, component.template()].join("/n");
 }
 export async function transpileFromString(tsCode: string): Promise<string> {

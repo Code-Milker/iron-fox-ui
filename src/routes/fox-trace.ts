@@ -47,13 +47,13 @@ router.get("/fox-trace", async (ctx) => {
       <p>Current Sum: ${ctx.state.sum}</p>
     </div>
   `).render();
-  const markdown = await renderComponentMarkdown(comp);
+  console.log(comp.template());
+  // const markdown = await renderComponentMarkdown(comp);
   // const res = await transpileFromString(JSON.stringify(comp.state));
   // console.log(comp.state);
   // console.log(comp.actions);
   // console.log(comp.template);
-  console.log({ markdown });
-  ctx.response.body = `<html> <body>${markdown}</body> </html>`;
+  ctx.response.body = `<html> <body>${comp}</body> </html>`;
 });
 
 export default router;

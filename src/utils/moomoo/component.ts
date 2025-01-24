@@ -130,15 +130,28 @@ export const createComponent = <
                   "Template function is not set. Use setTemplate first.",
                 );
               }
-              const wrappedState = Object.keys(state).reduce((acc, key) => {
+              function wrap<T>(
+                obj: T,
+                markdownFn: (key: keyof T, value: T[keyof T]) => string,
+              ): Record<keyof T, string> {
                 // @ts-ignore
-                acc[key] = `<span moo='${
+                return Object.keys(obj).reduce((acc, key) => {
+                  const typedKey = key as keyof T;
+                  acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
+                  return acc;
+                }, {} as Record<keyof T, string>);
+              }
+              const wrappedState = wrap(state, (key, value) => {
+                return `<span moo='${
                   JSON.stringify({ key })
-                }' style="display: inline;">${
-                  // @ts-ignore
-                  state[key]}</span>`;
-                return acc;
-              }, {} as Record<keyof TState, string>);
+                }' style="display: inline;">${value}</span>`;
+              });
+              const wrappedActions = wrap(actions, (key) => {
+                return `render(ctx.actions.${String(key)}(ctx));`;
+              });
+              const wrappedSideEffects = wrap(sideEffects, (key) => {
+                return `ctx.sideEffects.${String(key)}(ctx)`;
+              });
               return {
                 state: state as TState,
                 actions: actions as {
@@ -153,19 +166,8 @@ export const createComponent = <
                 template: () =>
                   templateFn!({
                     state: wrappedState,
-                    actions: actionNames.reduce((acc, name) => {
-                      acc[name as keyof TActions] =
-                        `render(ctx.actions.${name}(ctx));`; // Add () to action names
-                      return acc;
-                    }, {} as Record<keyof TActions, string>), // Pass action names with () to template
-                    sideEffects: Object.keys(sideEffects).reduce(
-                      (acc, name) => {
-                        acc[name as keyof TSideEffects] =
-                          `ctx.sideEffects.${name}(ctx)`; // Add () to side effect names
-                        return acc;
-                      },
-                      {} as Record<keyof TSideEffects, string>,
-                    ), // Pass side effect names with () to template
+                    actions: wrappedActions,
+                    sideEffects: wrappedSideEffects,
                   }),
               };
             };

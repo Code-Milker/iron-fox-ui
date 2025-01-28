@@ -4,7 +4,7 @@ import { createComponent } from "../utils/moomoo/component.ts";
 import { renderPage, tempRender } from "../utils/moomoo/moo-moo.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
-  const page = createComponent().addProvider({ l: "asdf" })
+  const page = createComponent("foxTrace").addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
       body:
@@ -17,6 +17,8 @@ router.get("/fox-trace", async (ctx) => {
     }))
     .addActions({
       addSum: (ctx) => {
+        console.log("hello?");
+        console.log(ctx.state.sum);
         return { sum: ctx.state.sum + ctx.state.userNumberInput };
       },
       subtractSum: (ctx) => {

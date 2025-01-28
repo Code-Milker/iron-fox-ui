@@ -45,7 +45,9 @@ const initializeSideEffects = <
   return Object.fromEntries(
     Object.entries(sideEffectsObj).map(([key, effect]) => [
       key,
-      () => effect({ state, providers }), // Single ctx parameter
+      () => {
+        state, providers;
+      }, // Single ctx parameter
     ]),
   ) as {
     [K in keyof TSideEffects]: () => void;
@@ -77,7 +79,7 @@ const initializeChildren = <
 
 export const createComponent = <
   TProviders extends Record<string, any> = {},
->() => {
+>(name: string) => {
   let state: object | undefined;
   let actions: Record<string, (...args: any[]) => void> = {};
   let templateFn:
@@ -181,47 +183,48 @@ export const createComponent = <
                   }' style="display: inline;">${value}</span>`;
                 });
                 const wrappedActions = wrap(actions, (key) => {
-                  return `render(ctx.actions.${String(key)}(ctx));`;
+                  return `render(${name}.actions.${String(key)}(${name}));`;
                 });
                 const wrappedSideEffects = wrap(sideEffects, (key) => {
-                  return `ctx.sideEffects.${String(key)}(ctx)`;
+                  return `${name}.sideEffects.${String(key)}()`;
                 });
                 // @ts-ignore
                 const wrappedChildren = wrap(children, (key) => {
                   return children[key]();
                 });
                 const template = () => {
-                  const scriptState = `const state = ${
+                  const scriptState = `state: ${
                     JSON.stringify(state, null, 1)
                   }\n`;
-                  const scriptActions = `const actions = {\n${
+                  const scriptActions = `actions: {\n${
                     Object.keys(actions).map((key) => {
                       return `${key}: ${actions[key].toString()},`;
                     }).join("\n")
                   }\n}`;
 
-                  const scriptSideEffects = `const sideEffects = {\n${
+                  const scriptSideEffects = `sideEffects: {\n${
                     Object.keys(sideEffects).map((key) => {
                       return `${key}: ${sideEffects[key].toString()},`;
                     }).join("\n")
                   }\n}`;
-                  const scriptProviders = `const providers = {\n${
+                  const scriptProviders = `providers: {\n${
                     Object.keys(providers!).map((key) => {
                       return `${key}: ${providers![key].toString()},`;
                     }).join("\n")
                   }\n}`;
 
-                  const script =
-                    `<script>\n \n${scriptState}\n${scriptActions}\n${scriptSideEffects}\n
-const ctx = {state,actions, sideEffects }
+                  const script = `<script>\n 
+const ${name} = {\n${scriptState},\n${scriptActions},\n${
+                    true ? "" : scriptSideEffects
+                  }\n}
 
 function render(updatedState) {
-ctx.state = {...ctx.state,  ...updatedState}
+${name}.state = {...${name}.state,  ...updatedState}
   document.querySelectorAll("[moo]").forEach((el) => {
     const mooConfig = JSON.parse(el.getAttribute("moo"));
     const key = mooConfig.key;
-    if (key && key in ctx.state) {
-      el.textContent = ctx.state[key];
+    if (key && key in ${name}.state) {
+      el.textContent = ${name}.state[key];
     }
   });}
 </script>\n`;
@@ -273,29 +276,29 @@ ctx.state = {...ctx.state,  ...updatedState}
 
 // Updated RenderedComponent type
 
-type AnyComponent = RenderedComponent<
-  object, // The state can be any object
-  Record<string, (...args: any[]) => void>, // The actions can be any set of functions
-  Record<string, () => void>, // The sideEffects can be any set of functions
-  Record<string, () => void>, // The sideEffects can be any set of functions
-  Record<string, any> | undefined // Providers can be any object or undefined
->;
-type RenderedComponent<
-  TState extends object,
-  TActions extends Record<string, (...args: any[]) => any>,
-  TSideEffects extends Record<string, () => void>,
-  TChildren extends Record<string, () => void>, // Added children type
-  TProviders extends Record<string, any> | undefined = undefined,
-> = {
-  state: TState;
-  actions: {
-    [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
-  };
-  sideEffects: { [K in keyof TSideEffects]: () => void };
-  children: { [K in keyof TChildren]: () => void }; // Added children
-  providers: TProviders;
-  template: () => string;
-};
+// type AnyComponent = RenderedComponent<
+//   object, // The state can be any object
+//   Record<string, (...args: any[]) => void>, // The actions can be any set of functions
+//   Record<string, () => void>, // The sideEffects can be any set of functions
+//   Record<string, () => void>, // The sideEffects can be any set of functions
+//   Record<string, any> | undefined // Providers can be any object or undefined
+// >;
+// type RenderedComponent<
+//   TState extends object,
+//   TActions extends Record<string, (...args: any[]) => any>,
+//   TSideEffects extends Record<string, () => void>,
+//   TChildren extends Record<string, () => void>, // Added children type
+//   TProviders extends Record<string, any> | undefined = undefined,
+// > = {
+//   state: TState;
+//   actions: {
+//     [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
+//   };
+//   sideEffects: { [K in keyof TSideEffects]: () => void };
+//   children: { [K in keyof TChildren]: () => void }; // Added children
+//   providers: TProviders;
+//   template: () => string;
+// };
 
 function wrap<T>(
   obj: T,

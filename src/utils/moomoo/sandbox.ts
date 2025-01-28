@@ -56,14 +56,14 @@ const initializeChildren = <
   TProviders extends Record<string, any>,
   TChildren extends Record<
     string,
-    (ctx: SideEffectCtx<TState, TProviders>) => string
+    (ctx: SideEffectCtx<TState, TProviders>) => void
   >,
 >(
   childrenObj: TChildren,
   state: TState,
   providers: TProviders,
 ): {
-  [K in keyof TChildren]: () => string;
+  [K in keyof TChildren]: () => void;
 } => {
   return Object.fromEntries(
     Object.entries(childrenObj).map(([key, child]) => [
@@ -71,7 +71,7 @@ const initializeChildren = <
       () => child({ state, providers }),
     ]),
   ) as {
-    [K in keyof TChildren]: () => string;
+    [K in keyof TChildren]: () => void;
   };
 };
 
@@ -186,9 +186,8 @@ export const createComponent = <
                 const wrappedSideEffects = wrap(sideEffects, (key) => {
                   return `ctx.sideEffects.${String(key)}(ctx)`;
                 });
-                // @ts-ignore
                 const wrappedChildren = wrap(children, (key) => {
-                  return children[key]();
+                  return `ctx.children.${String(key)}(ctx)`;
                 });
                 const template = () => {
                   const scriptState = `const state = ${
@@ -296,6 +295,86 @@ type RenderedComponent<
   providers: TProviders;
   template: () => string;
 };
+
+// Updated renderComponentMarkdown
+export async function renderComponentMarkdown(
+  component: AnyComponent,
+): Promise<string> {
+  // ... existing code ...
+
+  // Add children to ctx
+  const ctx = {
+    state: component.state,
+    actions: component.actions,
+    sideEffects: component.sideEffects,
+    children: component.children, // Include children
+    providers: component.providers,
+  };
+  function stringifyWithFunctions(obj: any): string {
+    return JSON.stringify(
+      obj,
+      (key, value) => {
+        if (typeof value === "function") {
+          let funcString = value.toString();
+          // Remove excessive spaces and newlines
+          funcString = funcString.replace(/\s+/g, " "); // Collapse all whitespace
+          funcString = funcString.trim(); // Trim leading and trailing spaces
+          console.log(funcString);
+          return funcString;
+        }
+        return value;
+      },
+      2, // No pretty-printing
+    );
+  }
+  // Clean the function body
+  const script = `<script> const ctx =${stringifyWithFunctions(ctx)}
+
+
+Object.keys(ctx.actions).forEach(function (key) {
+  const fnString = ctx.actions[key];
+  const start = fnString.indexOf("{") + 1;
+  const end = fnString.lastIndexOf("}");
+  const cleanedBody = fnString.substring(start, end).trim();
+  ctx.actions[key] = new Function("ctx", cleanedBody);
+});
+
+Object.keys(ctx.sideEffects).forEach((key) => {
+  const fnString = ctx.sideEffects[key];
+  ctx.sideEffects[key] = new Function(
+    "ctx",
+    fnString.replace(/^\(\)\s*=>\s*/, "").trim()
+  );
+});
+console.log(ctx);  
+function render(updatedState) {
+ctx.state = {...ctx.state,  ...updatedState}
+  document.querySelectorAll("[moo]").forEach((el) => {
+    const mooConfig = JSON.parse(el.getAttribute("moo"));
+    const key = mooConfig.key;
+    if (key && key in ctx.state) {
+      el.textContent = ctx.state[key];
+    }
+  });
+  }</script>`;
+  return [script, component.template()].join("/n");
+}
+export async function transpileFromString(tsCode: string): Promise<string> {
+  // Define a virtual module specifier
+  const specifier = "data:application/typescript;base64," + btoa(tsCode);
+
+  // Transpile the provided TypeScript code
+  const result = await transpile(specifier);
+
+  // Retrieve the transpiled JavaScript code
+  const transpiledCode = result.get(specifier);
+
+  if (!transpiledCode) {
+    throw new Error("Failed to transpile the provided TypeScript code.");
+  }
+
+  return transpiledCode;
+}
 
 function wrap<T>(
   obj: T,

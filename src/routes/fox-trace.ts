@@ -1,12 +1,10 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import {
-  createComponent,
-  renderComponentMarkdown,
-} from "../utils/moomoo/component.ts";
+import { createComponent } from "../utils/moomoo/component.ts";
+import { renderPage, tempRender } from "../utils/moomoo/moo-moo.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
-  const comp = createComponent().addProvider({ l: "asdf" })
+  const page = createComponent().addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
       body:
@@ -35,11 +33,16 @@ router.get("/fox-trace", async (ctx) => {
       logSum: (ctx) => {
         console.log("Side Effect - Sum:", ctx.state.sum);
       },
+    }).addChildren({
+      child1: (ctx) => {
+        return "hello";
+      },
     })
     .setTemplate((ctx) => `
     <div>
       <h1></h1>
       <p>${ctx.state.body}</p>
+      <p>${ctx.children.child1}</p>
       <button onclick="${ctx.actions.addSum}">Add</button>
       <button onclick="${ctx.actions.subtractSum}">Subtract</button>
       <button onclick="${ctx.actions.resetSum}">Reset</button>
@@ -47,13 +50,10 @@ router.get("/fox-trace", async (ctx) => {
       <p>Current Sum: ${ctx.state.sum}</p>
     </div>
   `).render();
-  console.log(comp.template());
-  // const markdown = await renderComponentMarkdown(comp);
-  // const res = await transpileFromString(JSON.stringify(comp.state));
-  // console.log(comp.state);
-  // console.log(comp.actions);
-  // console.log(comp.template);
-  ctx.response.body = `<html> <body>${comp.template()}</body> </html>`;
+
+  const p = await tempRender(page.template());
+  console.log(p);
+  ctx.response.body = p;
 });
 
 export default router;

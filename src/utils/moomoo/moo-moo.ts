@@ -49,6 +49,26 @@ export async function render(
 
   return template;
 }
+export const tempRender = async (page: string) => {
+  const filePath = join(Deno.cwd(), "src/public", "index.html");
+  const cssPath = join(Deno.cwd(), "src/public", "styles.css");
+  const tsPath = join(Deno.cwd(), "src/public", "test.ts");
+  const cssContent = await Deno.readTextFile(cssPath);
+  const content = await render(
+    filePath,
+    {
+      header: join(Deno.cwd(), "src/partials", "header.html"),
+      footer: join(Deno.cwd(), "src/partials", "footer.html"),
+      page: page, // Add Products Partial
+    },
+    {
+      title: "Iron Fox",
+      styles: `<style>${cssContent}</style>`, // Embed CSS directly into the HTML
+    },
+    tsPath, // Pass the TypeScript file path
+  );
+  return content;
+};
 
 export async function renderPage(
   path: string,

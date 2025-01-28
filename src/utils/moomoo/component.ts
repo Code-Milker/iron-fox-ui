@@ -183,7 +183,9 @@ export const createComponent = <
                   }' style="display: inline;">${value}</span>`;
                 });
                 const wrappedActions = wrap(actions, (key) => {
-                  return `render(${name}.actions.${String(key)}(${name}));`;
+                  return `${name}.render(${name}.actions.${
+                    String(key)
+                  }(${name}));`;
                 });
                 const wrappedSideEffects = wrap(sideEffects, (key) => {
                   return `${name}.sideEffects.${String(key)}()`;
@@ -216,9 +218,7 @@ export const createComponent = <
                   const script = `<script>\n 
 const ${name} = {\n${scriptState},\n${scriptActions},\n${
                     true ? "" : scriptSideEffects
-                  }\n}
-
-function render(updatedState) {
+                  }\nrender: function(updatedState) {
 ${name}.state = {...${name}.state,  ...updatedState}
   document.querySelectorAll("[moo]").forEach((el) => {
     const mooConfig = JSON.parse(el.getAttribute("moo"));
@@ -226,7 +226,9 @@ ${name}.state = {...${name}.state,  ...updatedState}
     if (key && key in ${name}.state) {
       el.textContent = ${name}.state[key];
     }
-  });}
+  });}}
+
+
 </script>\n`;
                   return [
                     script,

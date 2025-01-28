@@ -179,13 +179,13 @@ export const createComponent = <
                 }
                 const wrappedState = wrap(state, (key, value) => {
                   return `<span moo='${
-                    JSON.stringify({ key })
+                    JSON.stringify({ key, name })
                   }' style="display: inline;">${value}</span>`;
                 });
                 const wrappedActions = wrap(actions, (key) => {
                   return `${name}.render(${name}.actions.${
                     String(key)
-                  }(${name}));`;
+                  }(${name}),'${name}');`;
                 });
                 const wrappedSideEffects = wrap(sideEffects, (key) => {
                   return `${name}.sideEffects.${String(key)}()`;
@@ -218,12 +218,13 @@ export const createComponent = <
                   const script = `<script>\n 
 const ${name} = {\n${scriptState},\n${scriptActions},\n${
                     true ? "" : scriptSideEffects
-                  }\nrender: function(updatedState) {
+                  }\nrender: function(updatedState,caller) {
+if('${name}' !== caller){return}
 ${name}.state = {...${name}.state,  ...updatedState}
   document.querySelectorAll("[moo]").forEach((el) => {
     const mooConfig = JSON.parse(el.getAttribute("moo"));
     const key = mooConfig.key;
-    if (key && key in ${name}.state) {
+    if (key && key in ${name}.state && mooConfig.name === '${name}') {
       el.textContent = ${name}.state[key];
     }
   });}}

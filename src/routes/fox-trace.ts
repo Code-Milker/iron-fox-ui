@@ -4,6 +4,54 @@ import { createComponent } from "../utils/moomoo/component.ts";
 import { renderPage, tempRender } from "../utils/moomoo/moo-moo.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
+  const poop = createComponent("poop").addProvider({ l: "asdf" })
+    .setState(() => ({
+      title: "Trace Your Stolen Funds",
+      body:
+        `Provide the wallet address or transaction ID associated with the stolen funds to generate a detailed report on where your funds have gone and potential recovery options.`,
+      placeholder: "Enter your address or transaction hash",
+      buttonText: "trace",
+      sum: 0,
+      userNumberInput: 1,
+      cheese: "gouda",
+    }))
+    .addActions({
+      addSum: (ctx) => {
+        console.log("hello?");
+        console.log(ctx.state.sum);
+        return { sum: ctx.state.sum + ctx.state.userNumberInput };
+      },
+      subtractSum: (ctx) => {
+        return { sum: ctx.state.sum - 2 };
+      },
+      resetSum: (ctx) => {
+        return { sum: 0 };
+      },
+    })
+    .addSideEffects({
+      logTitle: (ctx) => {
+        console.log("Side Effect - Title:", ctx.state.title);
+      },
+      logSum: (ctx) => {
+        console.log("Side Effect - Sum:", ctx.state.sum);
+      },
+    }).addChildren({
+      child1: (ctx) => {
+        return "hello";
+      },
+    })
+    .setTemplate((ctx) => `
+    <div>
+      <h1></h1>
+      <p>${ctx.state.body}</p>
+      <p>${ctx.children.child1}</p>
+      <button onclick="${ctx.actions.addSum}">Add</button>
+      <button onclick="${ctx.actions.subtractSum}">Subtract</button>
+      <button onclick="${ctx.actions.resetSum}">Reset</button>
+      <button onclick="${ctx.sideEffects.logSum}">Log Sum</button>
+      <p>Current Sum: ${ctx.state.sum}</p>
+    </div>
+  `).render();
   const page = createComponent("foxTrace").addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
@@ -53,7 +101,7 @@ router.get("/fox-trace", async (ctx) => {
     </div>
   `).render();
 
-  const p = await tempRender(page.template());
+  const p = await tempRender(page.template() + poop.template());
   console.log(p);
   ctx.response.body = p;
 });

@@ -1,7 +1,7 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { interpolateFileSync, tempRender } from "../utils/moomoo/moo-moo.ts";
-import { createComponent } from "../utils/moomoo/component.ts";
+import { interpolateFileSync, tempRender } from "../moomoo/moo-moo.ts";
+import { createComponent } from "../moomoo/component.ts";
 import { htmlFolderPath } from "../utils/types.ts";
 const router = new Router();
 

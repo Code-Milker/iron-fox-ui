@@ -1,5 +1,3 @@
-import { bundle, transpile } from "https://deno.land/x/emit@0.40.0/mod.ts";
-
 type ActionArgs<T extends (...args: any) => any> = Parameters<T> extends
   [any, ...infer P] ? P
   : never;
@@ -46,7 +44,7 @@ const initializeSideEffects = <
     Object.entries(sideEffectsObj).map(([key, effect]) => [
       key,
       () => {
-        state, providers;
+        // state, providers;
       }, // Single ctx parameter
     ]),
   ) as {
@@ -127,6 +125,7 @@ export const createComponent = <
           sideEffects = {
             ...sideEffects,
             ...initializeSideEffects(
+              // @ts-ignore
               sideEffectsObj,
               state as TState,
               providers,
@@ -147,6 +146,7 @@ export const createComponent = <
 
             children = {
               ...children,
+              // @ts-ignore
               ...initializeChildren(childrenObj, state as TState, providers),
             };
 

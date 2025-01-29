@@ -1,11 +1,11 @@
 <div
   class="mx-7 border py-3 px-7 rounded-md border-iron-fox-dark-gray hover:border-iron-fox-light-gray bg-iron-fox-accent"
 >
-  <h2 class="my-5 text-iron-fox-cyan">{{title}}</h2>
+  <h2 class="my-5 text-iron-fox-cyan">${ctx.state.title}</h2>
   <p class="text-iron-fox-dark-gray text-sm font-thin mb-5">
-    {{body}}
+    ${ctx.state.body}
   </p>
-  <div class="mt-12 mb-10">
-    {{extra}}
-  </div>
+  <!-- <div class="mt-12 mb-10"> -->
+    ${ctx.children.extra}
+  <!-- </div> -->
 </div>

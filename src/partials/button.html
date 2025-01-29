@@ -1,7 +1,7 @@
 <button
   id="test"
   class="bg-iron-fox-cyan-darker text-iron-fox-light-gray py-4 px-8"
-  onclick="{{onclick}}"
+  onclick="${ctx.action.onclick}"
 >
-  {{text}}
+  ${ctx.state.text}
 </button>

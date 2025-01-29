@@ -1,7 +1,8 @@
 {
   "tasks": {
     "server": "deno run --allow-net --allow-read --watch --allow-env src/server.ts",
-    "tailwind": "tailwindcss -i ./src/public/tailwind.css -o ./src/public/styles.css --watch",
-    "dev": "deno fmt && deno task tailwind & deno task server"
+    "tailwind": "tailwindcss -i ./public/tailwind.css -o ./public/styles.css --watch",
+    "dev": "deno task cleanDS && deno fmt && deno task tailwind & deno task server",
+    "cleanDS": "find . -name '.DS_Store' -type f -delete"
   }
 }

@@ -1,5 +1,5 @@
 import { join } from "https://deno.land/std/path/mod.ts";
-import { htmlFolderPath } from "../types.ts";
+import { htmlFolderPath, publicFolderPath } from "../types.ts";
 async function render(
   filePath: string,
   vars: Record<string, string>,
@@ -12,10 +12,10 @@ async function render(
   return template;
 }
 export const tempRender = async (page: string) => {
-  const filePath = join(Deno.cwd(), "src/public", "index.html");
+  const filePath = join(Deno.cwd(), publicFolderPath, "index.html");
 
   const cssContent = await Deno.readTextFile(
-    join(Deno.cwd(), "src/public", "styles.css"),
+    join(Deno.cwd(), publicFolderPath, "styles.css"),
   );
   const header = await Deno.readTextFile(
     join(Deno.cwd(), htmlFolderPath, "header.html"),

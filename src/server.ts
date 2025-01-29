@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std/path/mod.ts";
-import foxTraceRoute from "./routes/fox-trace.ts";
-import mainRoute from "./routes/main.ts";
+import foxTraceRoute from "./fox-trace/routes/fox-trace.ts";
+import mainRoute from "./main/main.ts";
 import { Application, Router, send } from "https://deno.land/x/oak/mod.ts";
 const app = new Application();
 
@@ -13,7 +13,7 @@ app.use(async (ctx, next) => {
   const filePath = ctx.request.url.pathname;
   try {
     await send(ctx, filePath, {
-      root: `${Deno.cwd()}/src/public`, // Serve files from the "public" folder
+      root: `${Deno.cwd()}/public`, // Serve files from the "public" folder
     });
   } catch {
     await next(); // Proceed to other routes if file not found

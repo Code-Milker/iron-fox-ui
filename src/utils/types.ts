@@ -24,3 +24,4 @@ export const ethAddressOrTxHashSchema = z.union([
 ]);
 
 export const htmlFolderPath = "html/";
+export const publicFolderPath = "public/";

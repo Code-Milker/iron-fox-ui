@@ -5,8 +5,8 @@ import { interpolateFileSync, tempRender } from "../utils/moomoo/moo-moo.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
   const pricing = getPricing();
-  const product = await getProduct();
-  const features = await getFeatures();
+  const product = getProduct();
+  const features = getFeatures();
 
   const page = createComponent("foxTrace").addProvider({ l: "asdf" })
     .setState(() => ({

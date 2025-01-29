@@ -1,45 +1,73 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { render, renderPage } from "../utils/moomoo/moo-moo.ts";
+import { interpolateFileSync, tempRender } from "../utils/moomoo/moo-moo.ts";
+import { createComponent } from "../utils/moomoo/component.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
-  const filePath = join(Deno.cwd(), "src/partials", "main.html");
-  const card = await render(
-    join(Deno.cwd(), "src/partials", "card-with-img.html"),
-    {},
-    {
-      img: "magnify.jpg",
+  const card = createComponent("cardWithImg")
+    .addProvider({})
+    .setState(() => ({
       title: "Fox Trace",
       body:
         `Leverages advanced algorithms and blockchain analytics to uncover hidden
-    trails, identify malicious actors, and provide actionable insights. It
-    empowers crypto enthusiasts, security professionals, and law enforcement
-    agencies to do stuff.`,
-      extra: "",
-    },
-    "",
-  );
+      trails, identify malicious actors, and provide actionable insights. It
+      empowers crypto enthusiasts, security professionals, and law enforcement
+      agencies to do stuff.`,
+    }))
+    .addActions({})
+    .addSideEffects({})
+    .addChildren({})
+    .setTemplate((ctx) =>
+      interpolateFileSync(
+        join(Deno.cwd(), "src/partials", "card-with-img.html"),
+        ctx,
+      )
+    )
+    .render()
+    .template();
+  console.log("here: ", card);
 
-  const content = await render(
-    join(Deno.cwd(), "src/partials", "content.html"),
-    {},
-    {
+  const content = createComponent("content")
+    .addProvider({})
+    .setState(() => ({
       title: "Products",
-      content: card,
-    },
-    "",
-  );
+    }))
+    .addActions({})
+    .addSideEffects({})
+    .addChildren({ content: () => card })
+    .setTemplate((ctx) =>
+      interpolateFileSync(
+        join(Deno.cwd(), "src/partials", "content.html"),
+        ctx,
+      )
+    )
+    .render()
+    .template();
 
-  const main = await renderPage(
-    filePath,
-    {
-      content: content, // Add Products Partial
-      mission: join(Deno.cwd(), "src/partials", "mission.html"), // Add Products Partial
-    },
-    {},
-    "", // Pass the TypeScript file path
-  );
-  ctx.response.body = main;
+  const main = createComponent("mainPage")
+    .addProvider({})
+    .setState(() => ({}))
+    .addActions({})
+    .addSideEffects({})
+    .addChildren({
+      content: () => content,
+      mission: () =>
+        interpolateFileSync(
+          join(Deno.cwd(), "src/partials", "mission.html"),
+          {},
+        ),
+    })
+    .setTemplate((ctx) =>
+      interpolateFileSync(
+        join(Deno.cwd(), "src/partials", "main.html"),
+        ctx,
+      )
+    )
+    .render()
+    .template();
+
+  ctx.response.body = await tempRender(main);
+  // ctx.response.body = "<html><body><div>test</div></body><html>";
 });
 export default router;

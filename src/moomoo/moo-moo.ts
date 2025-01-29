@@ -1,5 +1,5 @@
 import { join } from "https://deno.land/std/path/mod.ts";
-import { htmlFolderPath, publicFolderPath } from "../utils/types.ts";
+import { htmlFolderPath, publicFolderPath } from "../types.ts";
 async function render(
   filePath: string,
   vars: Record<string, string>,

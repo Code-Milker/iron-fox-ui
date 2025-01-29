@@ -2,7 +2,7 @@ import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { createComponent } from "../../moomoo/component.ts";
 import { interpolateFileSync, tempRender } from "../../moomoo/moo-moo.ts";
-import { htmlFolderPath } from "../../utils/types.ts";
+import { htmlFolderPath } from "../../types.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
   const pricing = getPricing();

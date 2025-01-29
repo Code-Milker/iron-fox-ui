@@ -2,6 +2,7 @@ import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { createComponent } from "../utils/moomoo/component.ts";
 import { interpolateFileSync, tempRender } from "../utils/moomoo/moo-moo.ts";
+import { htmlFolderPath } from "../utils/types.ts";
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
   const pricing = getPricing();
@@ -50,7 +51,7 @@ router.get("/fox-trace", async (ctx) => {
     })
     .setTemplate((ctx) => {
       const res = interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "fox-trace.html"),
+        join(Deno.cwd(), htmlFolderPath, "fox-trace.html"),
         ctx,
       );
       return res;
@@ -71,7 +72,7 @@ const getPricing = () => {
     .addChildren({})
     .setTemplate((ctx) => {
       return interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "pricing.html"),
+        join(Deno.cwd(), htmlFolderPath, "pricing.html"),
         ctx,
       );
     }).render().template();
@@ -86,7 +87,7 @@ const getPricing = () => {
     .addChildren({ content: () => pricingComponent })
     .setTemplate((ctx) => {
       return interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "content.html"),
+        join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       );
     }).render().template();
@@ -100,7 +101,10 @@ const getProduct = () => {
     .addSideEffects({})
     .addChildren({})
     .setTemplate((ctx) =>
-      interpolateFileSync(join(Deno.cwd(), "src/partials", "button.html"), ctx)
+      interpolateFileSync(
+        join(Deno.cwd(), htmlFolderPath, "button.html"),
+        ctx,
+      )
     )
     .render()
     .template();
@@ -114,7 +118,7 @@ const getProduct = () => {
     .addSideEffects({})
     .addChildren({ button: () => button })
     .setTemplate((ctx) =>
-      interpolateFileSync(join(Deno.cwd(), "src/partials", "input.html"), ctx)
+      interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "input.html"), ctx)
     )
     .render()
     .template();
@@ -130,7 +134,7 @@ const getProduct = () => {
     .addSideEffects({})
     .addChildren({ extra: () => input })
     .setTemplate((ctx) =>
-      interpolateFileSync(join(Deno.cwd(), "src/partials", "card.html"), ctx)
+      interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "card.html"), ctx)
     )
     .render()
     .template();
@@ -143,7 +147,7 @@ const getProduct = () => {
     .addChildren({ content: () => productCard })
     .setTemplate((ctx) =>
       interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "content.html"),
+        join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )
     )
@@ -203,7 +207,7 @@ const getFeatures = () => {
               .setTemplate((ctx) =>
                 `<div class="mb-5">${
                   interpolateFileSync(
-                    join(Deno.cwd(), "src/partials", "card.html"),
+                    join(Deno.cwd(), htmlFolderPath, "card.html"),
                     ctx,
                   )
                 }</div>`
@@ -214,7 +218,10 @@ const getFeatures = () => {
           .join(""), // Convert array to a single string inside the function
     })
     .setTemplate((ctx) =>
-      interpolateFileSync(join(Deno.cwd(), "src/partials", "content.html"), ctx)
+      interpolateFileSync(
+        join(Deno.cwd(), htmlFolderPath, "content.html"),
+        ctx,
+      )
     )
     .render()
     .template();

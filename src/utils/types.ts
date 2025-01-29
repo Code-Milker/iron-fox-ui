@@ -22,3 +22,5 @@ export const ethAddressOrTxHashSchema = z.union([
   ethAddressSchema,
   txHashSchema,
 ]);
+
+export const htmlFolderPath = "html/";

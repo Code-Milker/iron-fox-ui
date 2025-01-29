@@ -1,8 +1,5 @@
-import { bundle, transpile } from "https://deno.land/x/emit@0.40.0/mod.ts";
-
 import { join } from "https://deno.land/std/path/mod.ts";
-import { delay } from "../utils.ts";
-import { createComponent } from "./component.ts";
+import { htmlFolderPath } from "../types.ts";
 async function render(
   filePath: string,
   vars: Record<string, string>,
@@ -21,10 +18,10 @@ export const tempRender = async (page: string) => {
     join(Deno.cwd(), "src/public", "styles.css"),
   );
   const header = await Deno.readTextFile(
-    join(Deno.cwd(), "src/partials", "header.html"),
+    join(Deno.cwd(), htmlFolderPath, "header.html"),
   );
   const footer = await Deno.readTextFile(
-    join(Deno.cwd(), "src/partials", "footer.html"),
+    join(Deno.cwd(), htmlFolderPath, "footer.html"),
   );
   const content = await render(
     filePath,
@@ -54,12 +51,12 @@ export const tempRender = async (page: string) => {
 //     .addChildren({
 //       header: () =>
 //         interpolateFileSync(
-//           join(Deno.cwd(), "src/partials", "header.html"),
+//           join(Deno.cwd(), htmlFolderPath, "header.html"),
 //           {},
 //         ),
 //       footer: () =>
 //         interpolateFileSync(
-//           join(Deno.cwd(), "src/partials", "footer.html"),
+//           join(Deno.cwd(), htmlFolderPath, "footer.html"),
 //           {},
 //         ),
 //       page: () => page,

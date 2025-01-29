@@ -2,6 +2,7 @@ import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
 import { interpolateFileSync, tempRender } from "../utils/moomoo/moo-moo.ts";
 import { createComponent } from "../utils/moomoo/component.ts";
+import { htmlFolderPath } from "../utils/types.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
@@ -20,7 +21,7 @@ router.get("/", async (ctx) => {
     .addChildren({})
     .setTemplate((ctx) =>
       interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "card-with-img.html"),
+        join(Deno.cwd(), htmlFolderPath, "card-with-img.html"),
         ctx,
       )
     )
@@ -38,7 +39,7 @@ router.get("/", async (ctx) => {
     .addChildren({ content: () => card })
     .setTemplate((ctx) =>
       interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "content.html"),
+        join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )
     )
@@ -54,13 +55,13 @@ router.get("/", async (ctx) => {
       content: () => content,
       mission: () =>
         interpolateFileSync(
-          join(Deno.cwd(), "src/partials", "mission.html"),
+          join(Deno.cwd(), htmlFolderPath, "mission.html"),
           {},
         ),
     })
     .setTemplate((ctx) =>
       interpolateFileSync(
-        join(Deno.cwd(), "src/partials", "main.html"),
+        join(Deno.cwd(), htmlFolderPath, "main.html"),
         ctx,
       )
     )

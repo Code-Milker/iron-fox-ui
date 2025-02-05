@@ -1,8 +1,8 @@
-import jsonfile from "jsonfile";
-import { checkFileExists } from "./dbUtils.ts";
-import { delay, stringifyBigInt } from "../utils.ts";
+import { stringifyBigInt } from "../utils.ts";
 import { TransactionContext } from "../types.ts";
-const dbFileName = "db/cache/transaction.json";
+import { PrismaClient } from "../../../../prisma/generated/client/index.js";
+
+const prisma = new PrismaClient();
 
 /**
  * Cache ABI, decoded method, or decoded event based on transaction hash.
@@ -15,33 +15,39 @@ export async function cacheTransactionInformation(
   chainId: number,
   value: TransactionContext,
 ) {
-  const fileExists = await checkFileExists(dbFileName);
-  let db: any = fileExists ? await jsonfile.readFile(dbFileName) : {};
-  const cacheKey = `${transactionHash}_${chainId}`; // Composite key based on transaction hash and chainId
-  db[cacheKey] = JSON.parse(stringifyBigInt(value));
-  await jsonfile.writeFile(dbFileName, db, { spaces: 2 });
+  // Convert the value to a JSON object after handling BigInts
+  const data = JSON.parse(stringifyBigInt(value));
+
+  // Upsert the record using the composite unique key (transactionHash, chainId)
+  await prisma.transactionInformation.upsert({
+    where: { transactionHash_chainId: { transactionHash, chainId } },
+    update: { data },
+    create: { transactionHash, chainId, data },
+  });
+  console.log(
+    `Cached transaction info for ${transactionHash} on chain ${chainId}`,
+  );
 }
 
 /**
  * Retrieve cached ABI, decoded method, or decoded event based on transaction hash.
  * @param transactionHash - The hash of the transaction.
  * @param chainId - The chain ID.
- * @param key - The key to retrieve (ABI, method, or event).
- * @returns {Promise<any | null>}
+ * @returns {Promise<TransactionContext | null>}
  */
 export async function getCachedTransactionInformation(
   transactionHash: string,
   chainId: number,
 ): Promise<TransactionContext | null> {
-  const fileExists = await checkFileExists(dbFileName);
+  const record = await prisma.transactionInformation.findUnique({
+    where: { transactionHash_chainId: { transactionHash, chainId } },
+  });
 
-  if (!fileExists) {
-    throw Error(dbFileName + " does not exist");
+  if (!record) {
+    throw new Error(
+      `No cached data found for ${transactionHash} on chain ${chainId}`,
+    );
   }
-  const db = (await jsonfile.readFile(dbFileName)) ?? {};
-  const cacheKey = `${transactionHash}_${chainId}`; // Composite key based on transaction hash and chainId
-  if (!db[cacheKey]) {
-    return null;
-  }
-  return db[cacheKey] || null;
+
+  return record.data as TransactionContext;
 }

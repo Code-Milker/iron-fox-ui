@@ -28,7 +28,6 @@ router.get("/", async (ctx) => {
     )
     .render()
     .template();
-  console.log("here: ", card);
 
   const content = createComponent("content")
     .addProvider({})

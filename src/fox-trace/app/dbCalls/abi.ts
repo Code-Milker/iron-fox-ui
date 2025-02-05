@@ -1,48 +1,63 @@
-import jsonfile from "jsonfile";
-import { checkFileExists } from "./dbUtils.ts";
-const abiCacheDb = "db/cache/abi.json";
+// Import the PrismaClient from your generated client.
+import { PrismaClient } from "../../../../prisma/generated/client/index.js";
+
+const prisma = new PrismaClient();
 
 /**
- * Cache the ABI for a contract on a specific chain.
+ * Cache the ABI for a contract on a specific chain using PostgreSQL.
  * @param contractAddress - The address of the contract.
  * @param chainId - The chain ID.
- * @param abi - The ABI to cache.
+ * @param abi - The ABI to cache (as a JSON string).
  */
 export async function cacheAbi(
   contractAddress: string,
   chainId: number,
   abi: string,
 ) {
-  const cacheKey = `${contractAddress}_${chainId}`; // Composite key including chainId
-  const fileExists = await checkFileExists(abiCacheDb);
-  let db: any = fileExists ? await jsonfile.readFile(abiCacheDb) : {};
+  // Parse the ABI JSON string.
+  const abiData = JSON.parse(abi);
 
-  db[cacheKey] = JSON.parse(abi);
+  // Upsert the ABI cache record.
+  await prisma.abiCache.upsert({
+    where: {
+      // Composite unique identifier using the primary key fields.
+      contractAddress_chainId: { contractAddress, chainId },
+    },
+    update: {
+      data: abiData,
+    },
+    create: {
+      contractAddress,
+      chainId,
+      data: abiData,
+    },
+  });
 
-  await jsonfile.writeFile(abiCacheDb, db, { spaces: 2 });
   console.log(
     `ABI cached successfully for contract ${contractAddress} on chain ${chainId}`,
   );
 }
 
 /**
- * Retrieve the cached ABI for a contract on a specific chain.
+ * Retrieve the cached ABI for a contract on a specific chain from PostgreSQL.
  * @param contractAddress - The address of the contract.
  * @param chainId - The chain ID.
- * @returns {Promise<string | null>}
+ * @returns {Promise<string | null>} The ABI as a JSON string, or null if not found.
  */
 export async function getCachedAbi(
   contractAddress: string,
   chainId: number,
 ): Promise<string | null> {
-  const cacheKey = `${contractAddress}_${chainId}`; // Composite key including chainId
-  const fileExists = await checkFileExists(abiCacheDb);
-  if (!fileExists) {
-    return null;
+  const record = await prisma.abiCache.findUnique({
+    where: {
+      contractAddress_chainId: { contractAddress, chainId },
+    },
+  });
+
+  if (record) {
+    // Return the cached ABI as a JSON string.
+    return JSON.stringify(record.data);
   }
-  const db = await jsonfile.readFile(abiCacheDb);
-  if (db[cacheKey]) {
-    return JSON.stringify(db[cacheKey]);
-  }
+
   return null;
 }

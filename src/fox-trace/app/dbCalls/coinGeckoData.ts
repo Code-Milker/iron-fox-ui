@@ -1,117 +1,163 @@
-import jsonfile from "jsonfile";
-import { checkFileExists } from "./dbUtils.ts";
-const dbFileName = "db/cache/tokenPriceUSD.json";
+import { PrismaClient } from "../../../../prisma/generated/client/index.js";
+
+const prisma = new PrismaClient();
+
+// -----------------------------------------------------------------------------
+// Token Price USD Cache
+// -----------------------------------------------------------------------------
+
 export interface TokenPriceUSD {
   on: Date;
   usd: number;
   AmountInUSD?: number;
 }
+
+/**
+ * Cache token price data (USD) for a given token and chain.
+ * @param tokenName - The name of the token.
+ * @param chainId - The chain ID.
+ * @param tokenData - The token price data (without the timestamp).
+ */
 export async function cacheTokenPriceUSD(
   tokenName: string,
   chainId: number,
   tokenData: Omit<TokenPriceUSD, "on">,
 ) {
-  const cacheKey = `${tokenName.toLowerCase()}_${chainId}`; // Composite key including chainId
-  const fileExists = await checkFileExists(dbFileName);
-  let db: any = fileExists ? await jsonfile.readFile(dbFileName) : {};
-  db[cacheKey] = tokenData;
-  await jsonfile.writeFile(dbFileName, db, { spaces: 2 });
+  const normalizedTokenName = tokenName.toLowerCase();
+  await prisma.tokenPriceUSD.upsert({
+    where: {
+      // Composite unique identifier as defined in the Prisma model.
+      tokenName_chainId: { tokenName: normalizedTokenName, chainId },
+    },
+    update: {
+      data: tokenData,
+    },
+    create: {
+      tokenName: normalizedTokenName,
+      chainId,
+      data: tokenData,
+    },
+  });
 }
 
+/**
+ * Retrieve the cached token price data (USD) for a given token and chain.
+ * Returns the token data with an 'on' timestamp derived from the record's updatedAt.
+ * @param tokenAddress - The token's address (or name) used for caching.
+ * @param chainId - The chain ID.
+ * @returns The token price data (with a timestamp) or null if not found.
+ */
 export async function getcachedTokenPriceUSD(
   tokenAddress: string,
   chainId: number,
 ): Promise<TokenPriceUSD | null> {
-  const cacheKey = `${tokenAddress.toLowerCase()}_${chainId}`; // Composite key including chainId
-  const fileExists = await checkFileExists(dbFileName);
-  if (!fileExists) {
-    return null;
+  const normalizedTokenName = tokenAddress.toLowerCase();
+  const record = await prisma.tokenPriceUSD.findUnique({
+    where: {
+      tokenName_chainId: { tokenName: normalizedTokenName, chainId },
+    },
+  });
+
+  if (record) {
+    // Return the stored token data with the updatedAt timestamp as 'on'
+    return { on: record.updatedAt, ...record.data } as TokenPriceUSD;
   }
-  const db = await jsonfile.readFile(dbFileName);
-  if (db[cacheKey]) {
-    return db[cacheKey];
-  }
+
   return null;
 }
 
-const coinGeckoApiFileName = "db/cache/coinGeckoApiFileName.json";
+// -----------------------------------------------------------------------------
+// CoinGecko API Names Cache
+// -----------------------------------------------------------------------------
+
+/**
+ * Retrieve the cached CoinGecko API names.
+ * The cached data is stored in a single record identified by a constant ID.
+ * @returns An array of coin definitions (id, symbol, name) or null if not found.
+ */
 export async function getCachedCoinGeckoApiNames(): Promise<
-  | {
-    id: string;
-    symbol: string;
-    name: string;
-  }[]
-  | null
+  { id: string; symbol: string; name: string }[] | null
 > {
-  const fileExists = await checkFileExists(coinGeckoApiFileName);
-  if (!fileExists) {
-    return null;
-  }
-  const db = await jsonfile.readFile(coinGeckoApiFileName);
-  return db ? db : null;
-}
-export async function cacheCoinGeckoApiNames(data: any) {
-  const fileExists = await checkFileExists(coinGeckoApiFileName);
-  if (!fileExists) {
-    throw Error("file does not exist" + coinGeckoApiFileName);
-  }
-  // let db: any = fileExists ? await jsonfile.readFile(coinGeckoApiFileName) : [];
-  await jsonfile.writeFile(coinGeckoApiFileName, data, { spaces: 2 });
+  // We use a constant id for the API names cache record.
+  const record = await prisma.coinGeckoApiName.findUnique({
+    where: { id: "coinGeckoApiNames" },
+  });
+
+  return record
+    ? (record.data as { id: string; symbol: string; name: string }[])
+    : null;
 }
 
-const coinGeckoTokenDetails = "db/cache/coinGeckoTokenDetails.json";
+/**
+ * Cache CoinGecko API names.
+ * @param data - The array of coin definitions (id, symbol, name) to cache.
+ */
+export async function cacheCoinGeckoApiNames(data: any) {
+  await prisma.coinGeckoApiName.upsert({
+    where: { id: "coinGeckoApiNames" },
+    update: { data },
+    create: { id: "coinGeckoApiNames", data },
+  });
+}
+
+// -----------------------------------------------------------------------------
+// CoinGecko Token Details Cache
+// -----------------------------------------------------------------------------
+
+/**
+ * Retrieve cached token details from CoinGecko.
+ * @param id - The unique identifier for the token.
+ * @returns The cached token details (as JSON) or null if not found.
+ */
 export async function getCachedCoinGeckoTokenDetails(
   id: string,
 ): Promise<any | null> {
-  const fileExists = await checkFileExists(coinGeckoTokenDetails);
-  if (!fileExists) {
-    return null;
-  }
-  const db = await jsonfile.readFile(coinGeckoTokenDetails);
-
-  if (db[id]) {
-    return db[id];
-  }
-  return null;
+  const record = await prisma.coinGeckoTokenDetail.findUnique({
+    where: { id },
+  });
+  return record ? record.data : null;
 }
+
+/**
+ * Cache token details from CoinGecko.
+ * @param id - The unique identifier for the token.
+ * @param data - The token details data to cache.
+ */
 export async function cacheCoinGeckoTokenDetails(id: string, data: any) {
-  const fileExists = await checkFileExists(coinGeckoTokenDetails);
-  if (!fileExists) {
-    throw Error("file does not exist" + coinGeckoTokenDetails);
-  }
-  let db: any = fileExists
-    ? await jsonfile.readFile(coinGeckoTokenDetails)
-    : {};
-  db[id] = data;
-  await jsonfile.writeFile(coinGeckoTokenDetails, db, { spaces: 2 });
+  await prisma.coinGeckoTokenDetail.upsert({
+    where: { id },
+    update: { data },
+    create: { id, data },
+  });
 }
 
-const coinGeckoTokenDetailsId = "db/cache/coinGeckoTokenDetailsId.json";
+// -----------------------------------------------------------------------------
+// CoinGecko Token Details Identifier Cache
+// -----------------------------------------------------------------------------
+
+/**
+ * Retrieve the cached CoinGecko token details identifier.
+ * @param id - The identifier key.
+ * @returns The cached identifier (as a string) or null if not found.
+ */
 export async function getCachedCoinGeckoTokenDetailsId(
   id: string,
 ): Promise<string | null> {
-  const fileExists = await checkFileExists(coinGeckoTokenDetailsId);
-  if (!fileExists) {
-    return null;
-  }
-  const db = await jsonfile.readFile(coinGeckoTokenDetailsId);
-
-  if (db[id]) {
-    return db[id];
-  }
-  return null;
+  const record = await prisma.coinGeckoTokenDetailsId.findUnique({
+    where: { id },
+  });
+  return record ? (record.data as string) : null;
 }
+
+/**
+ * Cache the CoinGecko token details identifier.
+ * @param id - The identifier key.
+ * @param data - The token details identifier (as a string) to cache.
+ */
 export async function cacheCoinGeckoTokenDetailsId(id: string, data: string) {
-  const fileExists = await checkFileExists(coinGeckoTokenDetailsId);
-  if (!fileExists) {
-    throw Error("file does not exist" + coinGeckoTokenDetailsId);
-  }
-
-  console.log({ fileExists, id, data });
-  let db: any = fileExists
-    ? await jsonfile.readFile(coinGeckoTokenDetailsId)
-    : {};
-  db[id] = data;
-
-  await jsonfile.writeFile(coinGeckoTokenDetailsId, db, { spaces: 2 });
+  await prisma.coinGeckoTokenDetailsId.upsert({
+    where: { id },
+    update: { data },
+    create: { id, data },
+  });
 }

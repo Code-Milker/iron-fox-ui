@@ -1,0 +1,124 @@
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") 
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+///
+/// ABI Cache
+///
+/// Caches a contract’s ABI (stored as a JSON blob) for a given chain.
+///
+model AbiCache {
+  contractAddress String
+  chainId         Int
+  /// The cached ABI, stored as a JSON blob.
+  data            Json
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  @@id([contractAddress, chainId])
+}
+
+///
+/// Token Price USD Cache
+///
+/// Caches token price information as a JSON blob. In your original file,
+/// this includes the token price in USD (and optionally, an additional amount),
+/// along with a timestamp.
+///
+model TokenPriceUSD {
+  tokenName String
+  chainId   Int
+  /// The cached token price data stored as a JSON blob.
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@id([tokenName, chainId])
+}
+
+///
+/// CoinGecko API Names Cache
+///
+/// Caches an array of coin definitions (id, symbol, name) as a JSON blob.
+///
+model CoinGeckoApiName {
+  id        String @id
+  /// The entire CoinGecko API names blob.
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+///
+/// CoinGecko Token Detail Cache
+///
+/// Caches detailed data for a token from CoinGecko, stored as a JSON blob.
+///
+model CoinGeckoTokenDetail {
+  id        String @id
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+///
+/// CoinGecko Token Details Identifier Cache
+///
+/// Caches the mapping from a token ID to a string identifier as a JSON blob.
+///
+model CoinGeckoTokenDetailsId {
+  id        String @id
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+///
+/// Step Data Cache
+///
+/// Caches data for a specific step. In your file, you stored two parts: the step’s
+/// data and a status object. Here, both are stored as JSON blobs.
+///
+model StepData {
+  /// Unique step number.
+  step      Int @id
+  /// The main data for the step, stored as a JSON blob.
+  data      Json
+  /// The status information for the step, stored as a JSON blob.
+  status    Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+///
+/// Token Events Cache
+///
+/// Caches token transfer events as a JSON blob for a given token contract and block range.
+///
+model TokenEventsCache {
+  tokenContractAddress String
+  startBlock           Int
+  endBlock             Int
+  /// The cached events stored as a JSON blob.
+  data                 Json
+  updatedAt            DateTime @default(now()) @updatedAt
+
+  @@id([tokenContractAddress, startBlock, endBlock])
+}
+
+///
+/// Transaction Information Cache
+///
+/// Caches transaction-related data (such as ABI, decoded method, or event information)
+/// as a JSON blob.
+///
+model TransactionInformation {
+  transactionHash String
+  chainId         Int
+  /// The cached transaction data stored as a JSON blob.
+  data            Json
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  @@id([transactionHash, chainId])
+}

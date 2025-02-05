@@ -2,10 +2,8 @@
 
 import { createComponent } from "../../moomoo/component.ts";
 import { generatePage } from "../../moomoo/page.ts";
-import { ethAddressOrTxHashSchema } from "../../types.ts";
-import foxTrace from "./fox-trace.ts";
+import foxTrace from "./fox-trace-utils.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-const res = ethAddressOrTxHashSchema.safeParse({});
 // console.log({ ethAddressOrTxHashSchema });
 //
 const router = new Router();
@@ -24,6 +22,7 @@ router.get("/fox-trace", async (ctx) => {
         return foxTrace.getPricing();
       },
       product: (ctx) => {
+        // http://localhost:8000/fox-trace-app?txnHash=0x123abc&address=0x456def
         return foxTrace.getProduct();
       },
       features: (ctx) => {
@@ -39,7 +38,6 @@ router.get("/fox-trace", async (ctx) => {
   ${ctx.children.product} ${ctx.children.features} ${ctx.children.pricing}
 </div>`;
     }).render();
-  console.log({ p: page.template() });
   const p = await generatePage(page.template(), {
     z: "https://cdn.jsdelivr.net/npm/zod@3.21.4/+esm",
   });

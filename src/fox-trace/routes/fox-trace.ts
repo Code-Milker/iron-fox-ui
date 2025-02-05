@@ -1,67 +1,39 @@
 import { join } from "https://deno.land/std/path/mod.ts";
-import { Router } from "https://deno.land/x/oak/mod.ts";
 import { createComponent } from "../../moomoo/component.ts";
-import { interpolateFileSync, tempRender } from "../../moomoo/moo-moo.ts";
+import { interpolateFileSync } from "../../moomoo/moo-moo.ts";
 import { htmlFolderPath } from "../../types.ts";
-const router = new Router();
-router.get("/fox-trace", async (ctx) => {
-  const pricing = getPricing();
-  const product = getProduct();
-  const features = getFeatures();
 
-  const page = createComponent("foxTrace").addProvider({ l: "asdf" })
-    .setState(() => ({
-      title: "Trace Your Stolen Funds",
-      body:
-        `Provide the wallet address or transaction ID associated with the stolen funds to generate a detailed report on where your funds have gone and potential recovery options.`,
-      placeholder: "Enter your address or transaction hash",
-      buttonText: "trace",
-      sum: 0,
-      userNumberInput: 1,
-      cheese: "gouda",
-    }))
-    .addActions({
-      addSum: (ctx) => {
-        return { sum: ctx.state.sum + ctx.state.userNumberInput };
-      },
-      subtractSum: (ctx) => {
-        return { sum: ctx.state.sum - 2 };
-      },
-      resetSum: (ctx) => {
-        return { sum: 0 };
-      },
+const getApp = () => {
+  const pricingComponent = createComponent("foxTraceApp").addProvider({})
+    .setState(() => {
+      return { title: "" };
     })
-    .addSideEffects({
-      logTitle: (ctx) => {
-        console.log("Side Effect - Title:", ctx.state.title);
-      },
-      logSum: (ctx) => {
-        console.log("Side Effect - Sum:", ctx.state.sum);
-      },
-    }).addChildren({
-      pricing: (ctx) => {
-        return pricing;
-      },
-      product: (ctx) => {
-        return product;
-      },
-      features: (ctx) => {
-        return features;
-      },
+    .addActions({})
+    .addSideEffects({})
+    .addChildren({})
+    .setTemplate((ctx) =>
+      `here is the app
+
+`
+    ).render()
+    .template();
+  const content = createComponent("pricingContent").addProvider({})
+    .setState(() => {
+      return {
+        title: "Pricing",
+      };
     })
+    .addActions({})
+    .addSideEffects({})
+    .addChildren({ content: () => pricingComponent })
     .setTemplate((ctx) => {
-      const res = interpolateFileSync(
-        join(Deno.cwd(), htmlFolderPath, "fox-trace.html"),
+      return interpolateFileSync(
+        join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       );
-      return res;
-    }).render();
-
-  const p = await tempRender(page.template());
-  ctx.response.body = p;
-});
-
-export default router;
+    }).render().template();
+  return content;
+};
 const getPricing = () => {
   const pricingComponent = createComponent("pricing").addProvider({})
     .setState(() => {
@@ -228,3 +200,4 @@ const getFeatures = () => {
 
   return featuresComponent;
 };
+export default { getFeatures, getPricing, getProduct, getApp };

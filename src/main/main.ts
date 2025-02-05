@@ -1,8 +1,9 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { interpolateFileSync, tempRender } from "../moomoo/moo-moo.ts";
+import { interpolateFileSync } from "../moomoo/moo-moo.ts";
 import { createComponent } from "../moomoo/component.ts";
 import { htmlFolderPath } from "../types.ts";
+import { generatePage } from "../moomoo/page.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
@@ -68,7 +69,7 @@ router.get("/", async (ctx) => {
     .render()
     .template();
 
-  ctx.response.body = await tempRender(main);
+  ctx.response.body = await generatePage(main, {});
   // ctx.response.body = "<html><body><div>test</div></body><html>";
 });
 export default router;

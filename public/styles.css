@@ -872,6 +872,14 @@ video {
   max-width: 28rem;
 }
 
+.max-w-\[500px\] {
+  max-width: 500px;
+}
+
+.max-w-\[600px\] {
+  max-width: 600px;
+}
+
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -1343,6 +1351,10 @@ video {
 
 .underline {
   text-decoration-line: underline;
+}
+
+.caret-black {
+  caret-color: #000;
 }
 
 .shadow-lg {

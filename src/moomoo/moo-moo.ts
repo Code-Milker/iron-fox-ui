@@ -1,40 +1,5 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { htmlFolderPath, publicFolderPath } from "../types.ts";
-async function render(
-  filePath: string,
-  vars: Record<string, string>,
-): Promise<string> {
-  let template = await Deno.readTextFile(filePath);
-
-  for (const [key, value] of Object.entries(vars)) {
-    template = template.replaceAll(`\${${key}}`, value);
-  }
-  return template;
-}
-export const tempRender = async (page: string) => {
-  const filePath = join(Deno.cwd(), publicFolderPath, "index.html");
-
-  const cssContent = await Deno.readTextFile(
-    join(Deno.cwd(), publicFolderPath, "styles.css"),
-  );
-  const header = await Deno.readTextFile(
-    join(Deno.cwd(), htmlFolderPath, "header.html"),
-  );
-  const footer = await Deno.readTextFile(
-    join(Deno.cwd(), htmlFolderPath, "footer.html"),
-  );
-  const content = await render(
-    filePath,
-    {
-      header,
-      footer,
-      page: page,
-      css: cssContent,
-      title: "hey",
-    },
-  );
-  return content;
-};
 
 export function interpolateFileSync(
   filePath: string,

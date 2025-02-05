@@ -1,5 +1,5 @@
 import { join } from "https://deno.land/std/path/mod.ts";
-import foxTraceRoute from "./fox-trace/routes/fox-trace.ts";
+import foxTraceRoute from "./fox-trace/routes/fox-trace-controller.ts";
 import mainRoute from "./main/main.ts";
 import { Application, Router, send } from "https://deno.land/x/oak/mod.ts";
 const app = new Application();

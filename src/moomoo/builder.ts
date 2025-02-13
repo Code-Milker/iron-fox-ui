@@ -124,7 +124,7 @@ export function createBuilderFactory<
     TMethods
   >,
 ) {
-  return (name: string): BuilderStep<
+  return (name: string = `a${Math.random() * 1000000}`): BuilderStep<
     {
       [K in TInitialMethodKey]: (
         arg: TInitialMethodArg,
@@ -132,7 +132,7 @@ export function createBuilderFactory<
     },
     TInitialMethodKey
   > => {
-    let context = {} as TContext;
+    let context = { name } as TContext;
     return {
       [config.initialMethod]: (arg: TInitialMethodArg) => {
         const newContext = config.initialContextUpdater(context, arg);
@@ -140,4 +140,16 @@ export function createBuilderFactory<
       },
     } as any;
   };
+}
+
+export function wrap<T>(
+  obj: T,
+  markdownFn: (key: keyof T, value: T[keyof T]) => string,
+): Record<keyof T, string> {
+  // @ts-ignore
+  return Object.keys(obj).reduce((acc, key) => {
+    const typedKey = key as keyof T;
+    acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
+    return acc;
+  }, {} as Record<keyof T, string>);
 }

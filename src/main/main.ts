@@ -4,22 +4,10 @@ import { interpolateFileSync } from "../moomoo/moo-moo.ts";
 import { createComponent } from "../moomoo/component.ts";
 import { htmlFolderPath } from "../types.ts";
 import { generatePage } from "../moomoo/page.ts";
-import { createComponent2 } from "../moomoo/sandbox.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
-  const component = createComponent2("app")
-    .addProvider({ apiURL: "https://aaa.com" })
-    .setState(() => ({ counter: 0, text: "" }))
-    .addActions({
-      increment: (ctx) => {
-        return { counter: ctx.state.counter + 1 }; // Correct: returns Partial<State>
-      },
-      setText: (ctx, newText: string) => {
-        return { text: newText }; // Correct: returns Partial<State>
-      },
-    }).addSideEffects({}).addChildren({}).setTemplate(() => "").build();
-  const card = createComponent
+  const card = createComponent("card")
     .addProvider({})
     .setState(() => ({
       title: "Fox Trace",
@@ -29,9 +17,17 @@ router.get("/", async (ctx) => {
       empowers crypto enthusiasts, security professionals, and law enforcement
       agencies to do stuff.`,
     }))
-    .addActions({})
+    .addActions({
+      "test": (ctx) => {
+        return { body: ctx.state.body };
+      },
+    })
     .addSideEffects({})
-    .addChildren({})
+    .addChildren({
+      "child": (ctx) => {
+        return "";
+      },
+    })
     .setTemplate((ctx) =>
       interpolateFileSync(
         join(Deno.cwd(), htmlFolderPath, "card-with-img.html"),
@@ -39,7 +35,7 @@ router.get("/", async (ctx) => {
       )
     ).build().render();
 
-  const content = createComponent
+  const content = createComponent("prouduct")
     .addProvider({})
     .setState(() => ({
       title: "Products",
@@ -54,7 +50,7 @@ router.get("/", async (ctx) => {
       )
     )
     .build().render();
-  const main = createComponent
+  const main = createComponent("content")
     .addProvider({})
     .setState(() => ({}))
     .addActions({})

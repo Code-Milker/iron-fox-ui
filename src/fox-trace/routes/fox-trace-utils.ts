@@ -4,19 +4,7 @@ import { interpolateFileSync } from "../../moomoo/moo-moo.ts";
 import { htmlFolderPath } from "../../types.ts";
 
 const getApp = () => {
-  const pricingComponent = createComponent.addProvider({})
-    .setState(() => {
-      return { title: "" };
-    })
-    .addActions({})
-    .addSideEffects({})
-    .addChildren({})
-    .setTemplate((ctx) =>
-      `here is the app
-
-`
-    ).build().render();
-  const content = createComponent.addProvider({})
+  const content = createComponent().addProvider({})
     .setState(() => {
       return {
         title: "Pricing",
@@ -24,7 +12,7 @@ const getApp = () => {
     })
     .addActions({})
     .addSideEffects({})
-    .addChildren({ content: () => pricingComponent })
+    .addChildren({})
     .setTemplate((ctx) => {
       return interpolateFileSync(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
@@ -34,7 +22,7 @@ const getApp = () => {
   return content;
 };
 const getPricing = () => {
-  const pricingComponent = createComponent.addProvider({})
+  const pricingComponent = createComponent().addProvider({})
     .setState(() => {
       return { title: "Pricing" };
     })
@@ -47,7 +35,7 @@ const getPricing = () => {
         ctx,
       );
     }).build().render();
-  const content = createComponent.addProvider({})
+  const content = createComponent().addProvider({})
     .setState(() => {
       return {
         title: "Pricing",
@@ -65,7 +53,7 @@ const getPricing = () => {
   return content;
 };
 export const getProduct = () => {
-  const button = createComponent
+  const button = createComponent()
     .addProvider({})
     .setState(() => ({ text: "trace" }))
     .addActions({})
@@ -79,7 +67,7 @@ export const getProduct = () => {
     )
     .build().render();
 
-  const input = createComponent
+  const input = createComponent()
     .addProvider({})
     .setState(() => ({
       placeholder: "Enter your address or transaction hash",
@@ -92,7 +80,7 @@ export const getProduct = () => {
     )
     .build().render();
 
-  const productCard = createComponent
+  const productCard = createComponent()
     .addProvider({})
     .setState(() => ({
       title: "Trace Your Stolen Funds",
@@ -107,7 +95,7 @@ export const getProduct = () => {
     )
     .build().render();
 
-  const content = createComponent
+  const content = createComponent()
     .addProvider({})
     .setState(() => ({ title: "Fox Trace" }))
     .addActions({})
@@ -125,7 +113,7 @@ export const getProduct = () => {
 };
 
 const getFeatures = () => {
-  const featuresComponent = createComponent
+  const featuresComponent = createComponent()
     .addProvider({})
     .setState(() => ({ title: "The Algorithm That Fights Back" }))
     .addActions({})
@@ -165,7 +153,7 @@ const getFeatures = () => {
           },
         ]
           .map(({ title, body }, index) =>
-            createComponent
+            createComponent()
               .addProvider({})
               .setState(() => ({ title, body }))
               .addActions({})

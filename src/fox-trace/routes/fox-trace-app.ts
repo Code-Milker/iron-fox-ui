@@ -28,7 +28,7 @@ router.get("/fox-trace-app", async (ctx) => {
   // when the next transaction is found it will transition in with a connecting edge, the edge determines amount moved
   // so we will need to create a json get for fetching report status which includes data on the whole thing
 
-  const selectChain = createComponent("selectChain")
+  const selectChain = createComponent()
     .addProvider({})
     .setState(() => ({
       address: address.data,
@@ -61,9 +61,7 @@ router.get("/fox-trace-app", async (ctx) => {
       `<div class="mt-10">${
         interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "card.html"), ctx)
       }</div>`
-    )
-    .render()
-    .template();
+    ).build().render();
 
   const table = createComponent("app")
     .addProvider({})
@@ -143,7 +141,7 @@ router.get("/fox-trace-app", async (ctx) => {
       <!-- More rows... -->
     </tbody>
   </table>
-`).render().template();
+`).build().render();
 
   const step2 = createComponent("step2")
     .addProvider({})
@@ -165,7 +163,7 @@ router.get("/fox-trace-app", async (ctx) => {
       }
 </div>
 `;
-    }).render().template();
+    }).build().render();
 
   const button = createComponent("beginFoxTrace")
     .addProvider({})
@@ -179,8 +177,7 @@ router.get("/fox-trace-app", async (ctx) => {
         ctx,
       )
     )
-    .render()
-    .template();
+    .build().render();
   const step3 = createComponent("step3")
     .addProvider({})
     .setState(() => ({
@@ -202,7 +199,7 @@ router.get("/fox-trace-app", async (ctx) => {
       }
 </div>
 `;
-    }).render().template();
+    }).build().render();
 
   const content = createComponent("content")
     .addProvider({})
@@ -225,8 +222,7 @@ ${step3}
         ctx,
       )
     )
-    .render()
-    .template();
+    .build().render();
 
   const p = await generatePage(content, {});
   ctx.response.body = p;

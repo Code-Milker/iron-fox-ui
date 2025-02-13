@@ -1,23 +1,8 @@
-// =========================================================
-// Component Builder (Derived Solely from Builder Code)
-// with Original Rendering Logic Preserved
-// =========================================================
-
-import { BuilderStep, createBuilderFactory } from "./builder.ts";
+import { BuilderStep, createBuilderFactory, wrap } from "./builder.ts";
 
 // -----------------------------------------------------------------
 // Helper: wrap
 // -----------------------------------------------------------------
-function wrap<T>(
-  obj: T,
-  markdownFn: (key: keyof T, value: T[keyof T]) => string,
-): Record<keyof T, string> {
-  return Object.keys(obj).reduce((acc, key) => {
-    const typedKey = key as keyof T;
-    acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
-    return acc;
-  }, {} as Record<keyof T, string>);
-}
 
 // -----------------------------------------------------------------
 // Inline Initializer for Children
@@ -84,7 +69,7 @@ export interface ComponentMethods<TContext> {
   addChildren: <
     TChildren extends Record<
       string,
-      (ctx: { state: any; providers: any }) => string
+      (ctx: TContext) => string
     >,
   >(
     children: TChildren,
@@ -96,12 +81,7 @@ export interface ComponentMethods<TContext> {
   >;
 
   setTemplate: (
-    templateFn: (ctx: {
-      state: any;
-      actions: any;
-      sideEffects: any;
-      children: any;
-    }) => string,
+    templateFn: (ctx: TContext) => string,
   ) => { build(): Component<TContext> };
 }
 
@@ -262,34 +242,4 @@ export const createComponent = createBuilderFactory<
     providers,
   }),
   steps: componentStepMap,
-})("app");
-
-// -----------------------------------------------------------------
-// Usage Example
-// -----------------------------------------------------------------
-
-const component = createComponent
-  .addProvider({ apiURL: "https://example.com" })
-  .setState(() => ({ counter: 0, text: "" }))
-  .addActions({
-    increment: (ctx) => ({ counter: ctx.state.counter + 1 }),
-    setText: (ctx, newText: string) => ({ text: newText }),
-  })
-  .addSideEffects({
-    log: (ctx) => {
-      console.log("Side effect: state is", ctx.state);
-    },
-  })
-  .addChildren({
-    header: (ctx) => `<h1>Counter: ${ctx.state.counter}</h1>`,
-  })
-  .setTemplate((ctx) =>
-    `<div>
-      ${ctx.children.header}
-      <div>Actions: ${JSON.stringify(ctx.actions)}</div>
-    </div>`
-  )
-  .build();
-
-console.log(component);
-console.log(component.render());
+});

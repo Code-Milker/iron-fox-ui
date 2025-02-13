@@ -1,3 +1,24 @@
+//// =========================================================
+// This file provides generic utility types and helper functions
+// for creating step-based builder factories. The core idea is
+// to allow a chain of method calls that update an internal context,
+// where each call returns a builder exposing only the next allowed
+// method. The file defines:
+//
+// 1. BuilderStep: a type that restricts a builder to only expose the
+//    allowed method(s).
+//
+// 2. createNextBuilder: a generic helper that, given the current
+//    context, an allowed method key, and a mapping of step implementations,
+//    returns a builder exposing only that allowed method. Each method
+//    call updates the context and advances the builder to the next step.
+//
+// 3. createBuilderFactory: a generic factory that creates a builder
+//    creator. It accepts a configuration object that defines the initial
+//    method and its context updater, as well as a mapping of subsequent
+//    steps. This factory can be used to create builders for various domains
+//    (e.g., components, pages) while preserving strong typing and inference
+//    of the evolving context.
 // =========================================================
 // Utility Types & Generic Next-Builder Helper
 // =========================================================

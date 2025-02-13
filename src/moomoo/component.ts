@@ -1,224 +1,215 @@
-type ActionArgs<T extends (...args: any) => any> = Parameters<T> extends
-  [any, ...infer P] ? P
-  : never;
+// =========================================================
+// Component Builder (Derived Solely from Builder Code)
+// with Original Rendering Logic Preserved
+// =========================================================
 
-type ActionReturnType<TState> = Partial<TState>;
+import { BuilderStep, createBuilderFactory } from "./builder.ts";
 
-type SideEffectCtx<TState, TProviders> = {
-  state: TState;
-  providers: TProviders;
-};
+// -----------------------------------------------------------------
+// Helper: wrap
+// -----------------------------------------------------------------
+function wrap<T>(
+  obj: T,
+  markdownFn: (key: keyof T, value: T[keyof T]) => string,
+): Record<keyof T, string> {
+  return Object.keys(obj).reduce((acc, key) => {
+    const typedKey = key as keyof T;
+    acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
+    return acc;
+  }, {} as Record<keyof T, string>);
+}
 
-const initializeState = <TState extends object>(
-  stateFn: () => TState,
-): TState => stateFn();
-
-const initializeActions = <
-  TState extends object,
-  TActions extends Record<
-    string,
-    (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
-  >,
->(
-  actionsObj: TActions,
-  state: TState,
-): TActions => {
-  return actionsObj; // Simply return the actions as they are, without modification
-};
-
-const initializeSideEffects = <
-  TState extends object,
-  TProviders extends Record<string, any>,
-  TSideEffects extends Record<
-    string,
-    (ctx: SideEffectCtx<TState, TProviders>) => void
-  >,
->(
-  sideEffectsObj: TSideEffects,
-  state: TState,
-  providers: TProviders,
-): {
-  [K in keyof TSideEffects]: () => void;
-} => {
-  return Object.fromEntries(
-    Object.entries(sideEffectsObj).map(([key, effect]) => [
-      key,
-      () => {
-        // state, providers;
-      }, // Single ctx parameter
-    ]),
-  ) as {
-    [K in keyof TSideEffects]: () => void;
-  };
-};
+// -----------------------------------------------------------------
+// Inline Initializer for Children
+// -----------------------------------------------------------------
+/**
+ * Transforms an object of children functions into an object
+ * where each function, when invoked, receives a context object
+ * containing the state's and providers.
+ */
 const initializeChildren = <
   TState extends object,
   TProviders extends Record<string, any>,
   TChildren extends Record<
     string,
-    (ctx: SideEffectCtx<TState, TProviders>) => string
+    (ctx: { state: TState; providers: TProviders }) => string
   >,
 >(
   childrenObj: TChildren,
   state: TState,
   providers: TProviders,
-): {
-  [K in keyof TChildren]: () => string;
-} => {
+): { [K in keyof TChildren]: () => string } => {
   return Object.fromEntries(
     Object.entries(childrenObj).map(([key, child]) => [
       key,
       () => child({ state, providers }),
     ]),
-  ) as {
-    [K in keyof TChildren]: () => string;
-  };
+  ) as { [K in keyof TChildren]: () => string };
 };
 
-export const createComponent = <
-  TProviders extends Record<string, any> = {},
->(name: string) => {
-  let state: object | undefined;
-  let actions: Record<string, (...args: any[]) => void> = {};
-  let templateFn:
-    | ((
-      ctx: { state: any; actions: any; sideEffects: any; children: any },
-    ) => string)
-    | null = null;
-  let sideEffects: Record<string, () => void> = {};
-  let children: Record<string, () => void> = {}; // Added children
-  let providers: TProviders | undefined;
+// -----------------------------------------------------------------
+// Component Builder Interfaces
+// -----------------------------------------------------------------
 
-  // ... rest of createComponent ...
+export interface ComponentMethods<TContext> {
+  setState: <TState extends object>(
+    stateFn: () => TState,
+  ) => BuilderStep<
+    ComponentMethods<TContext & { state: TState }>,
+    "addActions"
+  >;
 
-  const addProvider = <P extends TProviders>(newProviders: P) => {
-    providers = newProviders;
+  addActions: <
+    TState extends TContext extends { state: infer S } ? S : never,
+    TActions extends Record<
+      string,
+      (ctx: TContext, ...args: any[]) => Partial<TState>
+    >,
+  >(
+    actions: TActions,
+  ) => BuilderStep<
+    ComponentMethods<TContext & { actions: TActions }>,
+    "addSideEffects"
+  >;
 
-    const setState = <TState extends object>(stateFn: () => TState) => {
-      state = initializeState(stateFn);
+  addSideEffects: <
+    TSideEffects extends Record<string, (ctx: TContext) => void>,
+  >(
+    sideEffects: TSideEffects,
+  ) => BuilderStep<
+    ComponentMethods<TContext & { sideEffects: TSideEffects }>,
+    "addChildren"
+  >;
 
-      const addActions = <
-        TActions extends Record<
-          string,
-          (ctx: { state: TState }, ...args: any[]) => ActionReturnType<TState>
-        >,
-      >(
-        actionsObj: TActions,
-      ) => {
-        actions = {
-          ...actions,
-          ...initializeActions(actionsObj, state as TState),
-        };
+  addChildren: <
+    TChildren extends Record<
+      string,
+      (ctx: { state: any; providers: any }) => string
+    >,
+  >(
+    children: TChildren,
+  ) => BuilderStep<
+    ComponentMethods<
+      TContext & { children: { [K in keyof TChildren]: () => string } }
+    >,
+    "setTemplate"
+  >;
 
-        const addSideEffects = <
-          TSideEffects extends Record<
-            string,
-            (ctx: SideEffectCtx<TState, P>) => void
-          >,
-        >(
-          sideEffectsObj: TSideEffects,
-        ) => {
-          if (!providers) {
-            throw new Error("Providers required before side effects.");
+  setTemplate: (
+    templateFn: (ctx: {
+      state: any;
+      actions: any;
+      sideEffects: any;
+      children: any;
+    }) => string,
+  ) => { build(): Component<TContext> };
+}
+
+export interface Component<TContext> {
+  ctx: TContext;
+  render(): string;
+}
+
+// -----------------------------------------------------------------
+// Component Step Map
+// -----------------------------------------------------------------
+
+const componentStepMap: {
+  [K in keyof Omit<ComponentMethods<any>, "addProvider">]: (
+    context: any,
+    arg: any,
+  ) => {
+    nextContext: any;
+    nextStep: keyof Omit<ComponentMethods<any>, "addProvider"> | undefined;
+    builder?: (ctx: any) => any;
+  };
+} = {
+  setState: (context, stateFn: () => any) => {
+    const newContext = { ...context, state: stateFn() };
+    return { nextContext: newContext, nextStep: "addActions" };
+  },
+  addActions: (context, actions) => {
+    const newContext = { ...context, actions };
+    return { nextContext: newContext, nextStep: "addSideEffects" };
+  },
+  addSideEffects: (context, sideEffects) => {
+    const newContext = { ...context, sideEffects };
+    return { nextContext: newContext, nextStep: "addChildren" };
+  },
+  addChildren: (context, children) => {
+    if (!("state" in context)) {
+      throw new Error("State must be initialized before adding children.");
+    }
+    if (!("providers" in context)) {
+      throw new Error("Providers must be set before adding children.");
+    }
+    const newContext = {
+      ...context,
+      children: initializeChildren(children, context.state, context.providers),
+    };
+    return { nextContext: newContext, nextStep: "setTemplate" };
+  },
+  setTemplate: (context, templateFn: (ctx: any) => string) => {
+    return {
+      nextContext: context,
+      nextStep: undefined,
+      builder: (_ctx: any) => ({
+        build: () => {
+          const { state, actions, sideEffects, children, providers, name } =
+            context;
+
+          if (!state) {
+            throw new Error("State is not initialized. Use setState first.");
           }
 
-          sideEffects = {
-            ...sideEffects,
-            ...initializeSideEffects(
-              // @ts-ignore
-              sideEffectsObj,
-              state as TState,
-              providers,
-            ),
-          };
+          if (!providers) {
+            throw new Error("Providers are not set. Use addProvider first.");
+          }
 
-          const addChildren = <
-            TChildren extends Record<
-              string,
-              (ctx: SideEffectCtx<TState, P>) => void
-            >,
-          >(
-            childrenObj: TChildren,
-          ) => {
-            if (!providers) {
-              throw new Error("Providers required before children.");
-            }
+          if (!templateFn) {
+            throw new Error(
+              "Template function is not set. Use setTemplate first.",
+            );
+          }
 
-            children = {
-              ...children,
-              // @ts-ignore
-              ...initializeChildren(childrenObj, state as TState, providers),
-            };
+          const wrappedState = wrap(state, (key, value) => {
+            return `<span moo='${
+              JSON.stringify({ key, name })
+            }' style="display: inline;">${value}</span>`;
+          });
+          const wrappedActions = wrap(actions, (key) => {
+            return `${name}.render(${name}.actions.${
+              String(key)
+            }(${name}),'${name}');`;
+          });
+          const wrappedSideEffects = wrap(sideEffects, (key) => {
+            return `${name}.sideEffects.${String(key)}()`;
+          });
+          const wrappedChildren = wrap(children, (key) => {
+            return children[key]();
+          });
+          const template = () => {
+            const scriptState = `state: ${JSON.stringify(state, null, 1)}\n`;
+            const scriptActions = `actions: {\n${
+              Object.keys(actions)
+                .map((key) => `${key}: ${actions[key].toString()},`)
+                .join("\n")
+            }\n}`;
+            const scriptSideEffects = `sideEffects: {\n${
+              Object.keys(sideEffects)
+                .map((key) => `${key}: ${sideEffects[key].toString()},`)
+                .join("\n")
+            }\n}`;
+            const scriptProviders = `providers: {\n${
+              Object.keys(providers)
+                .map((key) => `${key}: ${providers[key].toString()},`)
+                .join("\n")
+            }\n}`;
 
-            const setTemplate = (
-              fn: (ctx: {
-                state: TState;
-                actions: Record<keyof TActions, string>;
-                sideEffects: Record<keyof TSideEffects, string>;
-                children: Record<keyof TChildren, string>;
-              }) => string,
-            ) => {
-              templateFn = fn;
-
-              const render = () => {
-                if (!state) {
-                  throw new Error(
-                    "State is not initialized. Use setState first.",
-                  );
-                }
-
-                if (!providers) {
-                  throw new Error(
-                    "State is not initialized. Use setState first.",
-                  );
-                }
-                if (!templateFn) {
-                  throw new Error(
-                    "Template function is not set. Use setTemplate first.",
-                  );
-                }
-                const wrappedState = wrap(state, (key, value) => {
-                  return `<span moo='${
-                    JSON.stringify({ key, name })
-                  }' style="display: inline;">${value}</span>`;
-                });
-                const wrappedActions = wrap(actions, (key) => {
-                  return `${name}.render(${name}.actions.${
-                    String(key)
-                  }(${name}),'${name}');`;
-                });
-                const wrappedSideEffects = wrap(sideEffects, (key) => {
-                  return `${name}.sideEffects.${String(key)}()`;
-                });
-                // @ts-ignore
-                const wrappedChildren = wrap(children, (key) => {
-                  return children[key]();
-                });
-                const template = () => {
-                  const scriptState = `state: ${
-                    JSON.stringify(state, null, 1)
-                  }\n`;
-                  const scriptActions = `actions: {\n${
-                    Object.keys(actions).map((key) => {
-                      return `${key}: ${actions[key].toString()},`;
-                    }).join("\n")
-                  }\n}`;
-
-                  const scriptSideEffects = `sideEffects: {\n${
-                    Object.keys(sideEffects).map((key) => {
-                      return `${key}: ${sideEffects[key].toString()},`;
-                    }).join("\n")
-                  }\n}`;
-                  const scriptProviders = `providers: {\n${
-                    Object.keys(providers!).map((key) => {
-                      return `${key}: ${providers![key].toString()},`;
-                    }).join("\n")
-                  }\n}`;
-
-                  const script = `<script>\n 
+            const script = `<script>\n 
 const ${name} = {\n${scriptState},\n${scriptActions},\n${
-                    true ? "" : scriptSideEffects
-                  }\nrender: function(updatedState,caller) {
+              true ? "" : scriptSideEffects
+            }\nrender: function(updatedState,caller) {
 if('${name}' !== caller){return}
 ${name}.state = {...${name}.state,  ...updatedState}
   document.querySelectorAll("[moo]").forEach((el) => {
@@ -228,89 +219,77 @@ ${name}.state = {...${name}.state,  ...updatedState}
       el.textContent = ${name}.state[key];
     }
   });}}
-
-
 </script>\n`;
-                  return [
-                    script,
-                    templateFn!({
-                      state: wrappedState,
-                      actions: wrappedActions,
-                      sideEffects: wrappedSideEffects,
-                      children: wrappedChildren,
-                    }),
-                  ].join("");
-                };
-                return {
-                  state: state as TState,
-                  actions: actions as {
-                    [K in keyof TActions]: (
-                      ...args: ActionArgs<TActions[K]>
-                    ) => void;
-                  }, // Keep functions in comp.actions
-                  sideEffects: sideEffects as {
-                    [K in keyof TSideEffects]: () => void;
-                  }, // Keep functions in comp.sideEffects
-                  providers, // Include providers for reference or debugging
-                  template,
-                };
-              };
-
-              return { render };
-            };
-
-            return { setTemplate };
+            return [
+              script,
+              templateFn({
+                state: wrappedState,
+                actions: wrappedActions,
+                sideEffects: wrappedSideEffects,
+                children: wrappedChildren,
+              }),
+            ].join("");
           };
-
-          return { addChildren }; // Now returns addChildren instead of setTemplate
-        };
-
-        return { addSideEffects };
-      };
-
-      return { addActions };
+          return {
+            ctx: { ...context },
+            render: () => template(),
+          };
+        },
+      }),
     };
-
-    return { setState };
-  };
-
-  return { addProvider };
+  },
 };
 
-// Updated RenderedComponent type
+// -----------------------------------------------------------------
+// Component Builder Factory
+// -----------------------------------------------------------------
 
-// type AnyComponent = RenderedComponent<
-//   object, // The state can be any object
-//   Record<string, (...args: any[]) => void>, // The actions can be any set of functions
-//   Record<string, () => void>, // The sideEffects can be any set of functions
-//   Record<string, () => void>, // The sideEffects can be any set of functions
-//   Record<string, any> | undefined // Providers can be any object or undefined
-// >;
-// type RenderedComponent<
-//   TState extends object,
-//   TActions extends Record<string, (...args: any[]) => any>,
-//   TSideEffects extends Record<string, () => void>,
-//   TChildren extends Record<string, () => void>, // Added children type
-//   TProviders extends Record<string, any> | undefined = undefined,
-// > = {
-//   state: TState;
-//   actions: {
-//     [K in keyof TActions]: (...args: ActionArgs<TActions[K]>) => void;
-//   };
-//   sideEffects: { [K in keyof TSideEffects]: () => void };
-//   children: { [K in keyof TChildren]: () => void }; // Added children
-//   providers: TProviders;
-//   template: () => string;
-// };
+/**
+ * The component builder starts with the `addProvider` method.
+ * It requires a providers object and also uses the provided name.
+ */
+export const createComponent = createBuilderFactory<
+  { name: string; providers?: Record<string, any> },
+  "addProvider",
+  Record<string, any>,
+  "setState",
+  ComponentMethods<{ name: string; providers: Record<string, any> }>
+>({
+  initialMethod: "addProvider",
+  nextStep: "setState",
+  initialContextUpdater: (context, providers) => ({
+    ...context,
+    providers,
+  }),
+  steps: componentStepMap,
+})("app");
 
-function wrap<T>(
-  obj: T,
-  markdownFn: (key: keyof T, value: T[keyof T]) => string,
-): Record<keyof T, string> {
-  // @ts-ignore
-  return Object.keys(obj).reduce((acc, key) => {
-    const typedKey = key as keyof T;
-    acc[typedKey] = markdownFn(typedKey, obj[typedKey]);
-    return acc;
-  }, {} as Record<keyof T, string>);
-}
+// -----------------------------------------------------------------
+// Usage Example
+// -----------------------------------------------------------------
+
+const component = createComponent
+  .addProvider({ apiURL: "https://example.com" })
+  .setState(() => ({ counter: 0, text: "" }))
+  .addActions({
+    increment: (ctx) => ({ counter: ctx.state.counter + 1 }),
+    setText: (ctx, newText: string) => ({ text: newText }),
+  })
+  .addSideEffects({
+    log: (ctx) => {
+      console.log("Side effect: state is", ctx.state);
+    },
+  })
+  .addChildren({
+    header: (ctx) => `<h1>Counter: ${ctx.state.counter}</h1>`,
+  })
+  .setTemplate((ctx) =>
+    `<div>
+      ${ctx.children.header}
+      <div>Actions: ${JSON.stringify(ctx.actions)}</div>
+    </div>`
+  )
+  .build();
+
+console.log(component);
+console.log(component.render());

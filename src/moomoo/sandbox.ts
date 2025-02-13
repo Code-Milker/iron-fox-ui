@@ -1,7 +1,3 @@
-// =========================================================
-// Component & Page Builder Definitions
-// =========================================================
-
 import { BuilderStep, createBuilderFactory } from "./builder.ts";
 
 /**
@@ -16,10 +12,6 @@ type NextComponentMethod<
   ComponentMethods<TContext & { [K in NewKey]: NewValue }>,
   NextStep
 >;
-
-// ---------------------------------------------------------
-// Component Builder
-// ---------------------------------------------------------
 
 export interface ComponentMethods<TContext> {
   setState: <TState extends object>(

@@ -8,7 +8,7 @@ import { Router } from "https://deno.land/x/oak/mod.ts";
 //
 const router = new Router();
 router.get("/fox-trace", async (ctx) => {
-  const page = createComponent("foxTrace").addProvider({ l: "asdf" })
+  const page = createComponent.addProvider({ l: "asdf" })
     .setState(() => ({
       title: "Trace Your Stolen Funds",
       body:
@@ -37,8 +37,8 @@ router.get("/fox-trace", async (ctx) => {
   <h1></h1>
   ${ctx.children.product} ${ctx.children.features} ${ctx.children.pricing}
 </div>`;
-    }).render();
-  const p = await generatePage(page.template(), {
+    }).build();
+  const p = await generatePage(page.render(), {
     z: "https://cdn.jsdelivr.net/npm/zod@3.21.4/+esm",
   });
   ctx.response.body = p;

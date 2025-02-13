@@ -19,8 +19,7 @@ router.get("/", async (ctx) => {
         return { text: newText }; // Correct: returns Partial<State>
       },
     }).addSideEffects({}).addChildren({}).setTemplate(() => "").build();
-  console.log({ component });
-  const card = createComponent("cardWithImg")
+  const card = createComponent
     .addProvider({})
     .setState(() => ({
       title: "Fox Trace",
@@ -38,11 +37,9 @@ router.get("/", async (ctx) => {
         join(Deno.cwd(), htmlFolderPath, "card-with-img.html"),
         ctx,
       )
-    )
-    .render()
-    .template();
+    ).build().render();
 
-  const content = createComponent("content")
+  const content = createComponent
     .addProvider({})
     .setState(() => ({
       title: "Products",
@@ -56,10 +53,8 @@ router.get("/", async (ctx) => {
         ctx,
       )
     )
-    .render()
-    .template();
-
-  const main = createComponent("mainPage")
+    .build().render();
+  const main = createComponent
     .addProvider({})
     .setState(() => ({}))
     .addActions({})
@@ -78,8 +73,7 @@ router.get("/", async (ctx) => {
         ctx,
       )
     )
-    .render()
-    .template();
+    .build().render();
 
   ctx.response.body = await generatePage(main, {});
   // ctx.response.body = "<html><body><div>test</div></body><html>";

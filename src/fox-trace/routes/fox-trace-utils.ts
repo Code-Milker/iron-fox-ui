@@ -4,7 +4,7 @@ import { interpolateFileSync } from "../../moomoo/moo-moo.ts";
 import { htmlFolderPath } from "../../types.ts";
 
 const getApp = () => {
-  const pricingComponent = createComponent("foxTraceApp").addProvider({})
+  const pricingComponent = createComponent.addProvider({})
     .setState(() => {
       return { title: "" };
     })
@@ -15,9 +15,8 @@ const getApp = () => {
       `here is the app
 
 `
-    ).render()
-    .template();
-  const content = createComponent("pricingContent").addProvider({})
+    ).build().render();
+  const content = createComponent.addProvider({})
     .setState(() => {
       return {
         title: "Pricing",
@@ -31,11 +30,11 @@ const getApp = () => {
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       );
-    }).render().template();
+    }).build().render();
   return content;
 };
 const getPricing = () => {
-  const pricingComponent = createComponent("pricing").addProvider({})
+  const pricingComponent = createComponent.addProvider({})
     .setState(() => {
       return { title: "Pricing" };
     })
@@ -47,8 +46,8 @@ const getPricing = () => {
         join(Deno.cwd(), htmlFolderPath, "pricing.html"),
         ctx,
       );
-    }).render().template();
-  const content = createComponent("pricingContent").addProvider({})
+    }).build().render();
+  const content = createComponent.addProvider({})
     .setState(() => {
       return {
         title: "Pricing",
@@ -62,11 +61,11 @@ const getPricing = () => {
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       );
-    }).render().template();
+    }).build().render();
   return content;
 };
 export const getProduct = () => {
-  const button = createComponent("traceButton")
+  const button = createComponent
     .addProvider({})
     .setState(() => ({ text: "trace" }))
     .addActions({})
@@ -78,10 +77,9 @@ export const getProduct = () => {
         ctx,
       )
     )
-    .render()
-    .template();
+    .build().render();
 
-  const input = createComponent("traceInput")
+  const input = createComponent
     .addProvider({})
     .setState(() => ({
       placeholder: "Enter your address or transaction hash",
@@ -92,10 +90,9 @@ export const getProduct = () => {
     .setTemplate((ctx) =>
       interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "input.html"), ctx)
     )
-    .render()
-    .template();
+    .build().render();
 
-  const productCard = createComponent("productCard")
+  const productCard = createComponent
     .addProvider({})
     .setState(() => ({
       title: "Trace Your Stolen Funds",
@@ -108,10 +105,9 @@ export const getProduct = () => {
     .setTemplate((ctx) =>
       interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "card.html"), ctx)
     )
-    .render()
-    .template();
+    .build().render();
 
-  const content = createComponent("productContent")
+  const content = createComponent
     .addProvider({})
     .setState(() => ({ title: "Fox Trace" }))
     .addActions({})
@@ -123,14 +119,13 @@ export const getProduct = () => {
         ctx,
       )
     )
-    .render()
-    .template();
+    .build().render();
 
   return content;
 };
 
 const getFeatures = () => {
-  const featuresComponent = createComponent("features")
+  const featuresComponent = createComponent
     .addProvider({})
     .setState(() => ({ title: "The Algorithm That Fights Back" }))
     .addActions({})
@@ -170,7 +165,7 @@ const getFeatures = () => {
           },
         ]
           .map(({ title, body }, index) =>
-            createComponent("featureCard" + index)
+            createComponent
               .addProvider({})
               .setState(() => ({ title, body }))
               .addActions({})
@@ -183,9 +178,8 @@ const getFeatures = () => {
                     ctx,
                   )
                 }</div>`
-              )
+              ).build()
               .render()
-              .template()
           )
           .join(""), // Convert array to a single string inside the function
     })
@@ -194,9 +188,8 @@ const getFeatures = () => {
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )
-    )
-    .render()
-    .template();
+    ).build()
+    .render();
 
   return featuresComponent;
 };

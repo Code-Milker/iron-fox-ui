@@ -4,9 +4,22 @@ import { interpolateFileSync } from "../moomoo/moo-moo.ts";
 import { createComponent } from "../moomoo/component.ts";
 import { htmlFolderPath } from "../types.ts";
 import { generatePage } from "../moomoo/page.ts";
+import { createComponent2 } from "../moomoo/sandbox.ts";
 const router = new Router();
 
 router.get("/", async (ctx) => {
+  const component = createComponent2("app")
+    .addProvider({ apiURL: "https://aaa.com" })
+    .setState(() => ({ counter: 0, text: "" }))
+    .addActions({
+      increment: (ctx) => {
+        return { counter: ctx.state.counter + 1 }; // Correct: returns Partial<State>
+      },
+      setText: (ctx, newText: string) => {
+        return { text: newText }; // Correct: returns Partial<State>
+      },
+    }).addSideEffects({}).addChildren({}).setTemplate(() => "").build();
+  console.log({ component });
   const card = createComponent("cardWithImg")
     .addProvider({})
     .setState(() => ({

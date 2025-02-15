@@ -16,6 +16,7 @@ router.get("/", async (ctx) => {
       trails, identify malicious actors, and provide actionable insights. It
       empowers crypto enthusiasts, security professionals, and law enforcement
       agencies to do stuff.`,
+      src: "magnify.jpg",
     }))
     .addActions({
       "test": (ctx) => {

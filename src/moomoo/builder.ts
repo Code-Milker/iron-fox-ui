@@ -124,7 +124,7 @@ export function createBuilderFactory<
     TMethods
   >,
 ) {
-  return (name: string = `a${Math.random() * 1000000}`): BuilderStep<
+  return (name: string = `a${Math.ceil(Math.random() * 1000000)}`): BuilderStep<
     {
       [K in TInitialMethodKey]: (
         arg: TInitialMethodArg,

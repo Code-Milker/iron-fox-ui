@@ -1,7 +1,4 @@
-import { join } from "https://deno.land/std/path/mod.ts";
-import { htmlFolderPath, publicFolderPath } from "../types.ts";
-
-export function interpolateFileSync(
+export function renderTemplateWithContext(
   filePath: string,
   vars: Record<string, any>,
 ): string {
@@ -51,6 +48,3 @@ export function generateRandomId(length = 8): string {
   }
   return result;
 }
-
-const id = generateRandomId();
-console.log(id);

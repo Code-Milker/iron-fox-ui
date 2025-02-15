@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std@0.224.0/path/join.ts";
 import { htmlFolderPath, publicFolderPath } from "../types.ts";
-import { interpolateFileSync } from "./moo-moo.ts";
+import { renderTemplateWithContext } from "./moo-moo.ts";
 
 export const fetchDependencies = (
   dependencies: Record<string, string>,

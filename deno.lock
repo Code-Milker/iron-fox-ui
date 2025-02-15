@@ -167,6 +167,7 @@
   },
   "redirects": {
     "https://deno.land/std/path/mod.ts": "https://deno.land/std@0.224.0/path/mod.ts",
+    "https://deno.land/x/dotenv/mod.ts": "https://deno.land/x/dotenv@v3.2.2/mod.ts",
     "https://deno.land/x/emit/mod.ts": "https://deno.land/x/emit@0.40.0/mod.ts",
     "https://deno.land/x/oak/mod.ts": "https://deno.land/x/oak@v17.1.3/mod.ts",
     "https://esm.sh/@ethersproject/abi@^5.7.0?target=denonext": "https://esm.sh/@ethersproject/abi@5.7.0?target=denonext",
@@ -325,6 +326,8 @@
     "https://deno.land/x/deno_cache@0.4.1/mod.ts": "ef1cda9235a93b89cb175fe648372fc0f785add2a43aa29126567a05e3e36195",
     "https://deno.land/x/deno_cache@0.4.1/util.ts": "8cb686526f4be5205b92c819ca2ce82220aa0a8dd3613ef0913f6dc269dbbcfe",
     "https://deno.land/x/dir@1.5.1/data_local_dir/mod.ts": "91eb1c4bfadfbeda30171007bac6d85aadacd43224a5ed721bbe56bc64e9eb66",
+    "https://deno.land/x/dotenv@v3.2.2/mod.ts": "077b48773de9205266a0b44c3c3a3c3083449ed64bb0b6cc461b95720678d38e",
+    "https://deno.land/x/dotenv@v3.2.2/util.ts": "693730877b13f8ead2b79b2aa31e2a0652862f7dc0c5f6d2f313f4d39c7b7670",
     "https://deno.land/x/emit@0.24.0/_utils.ts": "98412edc7aa29e77d592b54fbad00bdec1b05d0c25eb772a5f8edc9813e08d88",
     "https://deno.land/x/emit@0.24.0/emit.generated.js": "6530615edfb23cb0a5a5bded16b6f8979fc9a4a8af7319b7b1fdb83c043e0c52",
     "https://deno.land/x/emit@0.24.0/mod.ts": "66ef8ddaedcfca033eeee851379af59ed3f0e0aa6e025e7cdd24e4e158d874f3",

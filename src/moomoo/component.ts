@@ -322,6 +322,7 @@ const componentStepMap: {
             const wrappedSideEffects = wrap(sideEffects, (key) => {
               return `${name}.sideEffects.${String(key)}()`;
             });
+            //TODO: include children struct on return
             const wrappedChildren = wrap(children, (key) => {
               return children[key]();
             });
@@ -358,7 +359,6 @@ const componentStepMap: {
               script,
               markdown,
             ].join("\n");
-            console.log("template: ", template);
             return template;
           };
           return {

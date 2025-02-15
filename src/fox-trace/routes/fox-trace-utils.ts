@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { createComponent } from "../../moomoo/component.ts";
-import { interpolateFileSync } from "../../moomoo/moo-moo.ts";
+import { renderTemplateWithContext } from "../../moomoo/moo-moo.ts";
 import { htmlFolderPath } from "../../types.ts";
 
 const getApp = () => {
@@ -14,7 +14,7 @@ const getApp = () => {
     .addSideEffects({})
     .addChildren({})
     .setTemplate((ctx) => {
-      return interpolateFileSync(
+      return renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       );
@@ -30,7 +30,7 @@ const getPricing = () => {
     .addSideEffects({})
     .addChildren({})
     .setTemplate((ctx) => {
-      return interpolateFileSync(
+      return renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "pricing.html"),
         ctx,
       );
@@ -45,7 +45,7 @@ const getPricing = () => {
     .addSideEffects({})
     .addChildren({ content: () => pricingComponent })
     .setTemplate((ctx) => {
-      return interpolateFileSync(
+      return renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       );
@@ -60,7 +60,7 @@ export const getProduct = () => {
     .addSideEffects({})
     .addChildren({})
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "button.html"),
         ctx,
       )
@@ -76,7 +76,10 @@ export const getProduct = () => {
     .addSideEffects({})
     .addChildren({ button: () => button })
     .setTemplate((ctx) =>
-      interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "input.html"), ctx)
+      renderTemplateWithContext(
+        join(Deno.cwd(), htmlFolderPath, "input.html"),
+        ctx,
+      )
     )
     .build().render();
 
@@ -91,7 +94,10 @@ export const getProduct = () => {
     .addSideEffects({})
     .addChildren({ extra: () => input })
     .setTemplate((ctx) =>
-      interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "card.html"), ctx)
+      renderTemplateWithContext(
+        join(Deno.cwd(), htmlFolderPath, "card.html"),
+        ctx,
+      )
     )
     .build().render();
 
@@ -102,7 +108,7 @@ export const getProduct = () => {
     .addSideEffects({})
     .addChildren({ content: () => productCard })
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )
@@ -161,7 +167,7 @@ const getFeatures = () => {
               .addChildren({})
               .setTemplate((ctx) =>
                 `<div class="mb-5">${
-                  interpolateFileSync(
+                  renderTemplateWithContext(
                     join(Deno.cwd(), htmlFolderPath, "card.html"),
                     ctx,
                   )
@@ -172,7 +178,7 @@ const getFeatures = () => {
           .join(""), // Convert array to a single string inside the function
     })
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )

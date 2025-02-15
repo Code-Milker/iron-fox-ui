@@ -1,15 +1,15 @@
 import { join } from "https://deno.land/std@0.224.0/path/join.ts";
 import { createComponent } from "../../moomoo/component.ts";
-import { interpolateFileSync } from "../../moomoo/moo-moo.ts";
+import { renderTemplateWithContext } from "../../moomoo/moo-moo.ts";
 import { generatePage } from "../../moomoo/page.ts";
-import { ethAddressSchema, htmlFolderPath, txHashSchema } from "../../types.ts";
+import { ethAddressSchema, htmlFolderPath } from "../../types.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-
+import { config } from "https://deno.land/x/dotenv/mod.ts";
 const router = new Router();
 router.get("/fox-trace-app", async (ctx) => {
   // get data and run validations
   const searchParams = ctx.request.url.searchParams;
-  const address = await ethAddressSchema.safeParse(
+  let address = await ethAddressSchema.safeParse(
     searchParams.get("publicAddress"),
   );
   // const txnHash = await txHashSchema.safeParse(searchParams.get("txnHash"));
@@ -18,6 +18,7 @@ router.get("/fox-trace-app", async (ctx) => {
   if (!address.success && authroizedUser) {
     throw "invalid address";
   }
+  address = address.data;
   // 1. great we have their address, lets display their transactions
   // in any easy format for them to be able to read and have them
   // select the transactions they were attacked by.
@@ -59,90 +60,122 @@ router.get("/fox-trace-app", async (ctx) => {
     })
     .setTemplate((ctx) =>
       `<div class="mt-10">${
-        interpolateFileSync(join(Deno.cwd(), htmlFolderPath, "card.html"), ctx)
+        renderTemplateWithContext(
+          join(Deno.cwd(), htmlFolderPath, "card.html"),
+          ctx,
+        )
       }</div>`
     ).build().render();
 
-  const table = createComponent("app")
-    .addProvider({})
-    .setState(() => ({
-      title: "Fox Trace",
-      body: ``,
-    }))
-    .addActions({})
-    .addSideEffects({})
-    .addChildren({ extra: () => selectChain })
-    .setTemplate((ctx) => `
-  <table class="w-full min-w-full">
-    <thead>
-      <tr class="text-left text-sm font-medium text-iron-fox-cyan">
-        <!-- Checkbox column header -->
-        <th class="px-4 py-2 flex justify-start">
-          <input type="checkbox" class="form-checkbox" />
-        </th>
-        <th class="px-4 py-2">Transaction Hash</th>
-        <th class="px-4 py-2">Token</th>
-        <th class="px-4 py-2">Amount</th>
-        <th class="px-4 py-2">Date</th>
-        <th class="px-4 py-2">From</th>
-        <th class="px-4 py-2">To</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-iron-fox-dark-gray">
-      <!-- Example row; replace or loop as needed -->
-      <tr class="hover:bg-iron-fox-light-gray cursor-pointer">
-        <!-- Checkbox cell -->
-        <td class="px-4 py-2">
-          <input type="checkbox" class="form-checkbox" />
-        </td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xABC123...XYZ</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">WBTC</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">10.5</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">2025-02-05</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xFROM123...</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xTO456...</td>
-      </tr>
-      <tr class="hover:bg-iron-fox-light-gray cursor-pointer">
-        <!-- Checkbox cell -->
-        <td class="px-4 py-2">
-          <input type="checkbox" class="form-checkbox" />
-        </td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xABC123...XYZ</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">ETH</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">10.5</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">2025-02-05</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xFROM123...</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xTO456...</td>
-      </tr>
-      <tr class="hover:bg-iron-fox-light-gray cursor-pointer">
-        <!-- Checkbox cell -->
-        <td class="px-4 py-2">
-          <input type="checkbox" class="form-checkbox" />
-        </td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xABC123...XYZ</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">ETH</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">10.5</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">2025-02-05</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xFROM123...</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xTO456...</td>
-      </tr>
-      <tr class="hover:bg-iron-fox-light-gray cursor-pointer">
-        <!-- Checkbox cell -->
-        <td class="px-4 py-2">
-          <input type="checkbox" class="form-checkbox" />
-        </td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xABC123...XYZ</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">ETH</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">10.5</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">2025-02-05</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xFROM123...</td>
-        <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">0xTO456...</td>
-      </tr>
-      <!-- More rows... -->
-    </tbody>
-  </table>
-`).build().render();
+  // Helper: fetch transactions from Etherscan (for ETH transactions)
 
+  // Create our component using the component maker
+  // Example: Server-side code (e.g. in Node.js or getServerSideProps in Next.js)
+
+  // If needed, install node-fetch (or use the built-in fetch if on Node 18+)
+  // import fetch from 'node-fetch';
+
+  // Helper to fetch transactions from Etherscan
+  async function fetchTransactions(address: string, apiKey: string) {
+    const url =
+      `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    console.log(res);
+    console.log(data);
+    return data.status === "1" && Array.isArray(data.result) ? data.result : [];
+  }
+  function formatDate(timestamp: string) {
+    const date = new Date(parseInt(timestamp) * 1000);
+    return date.toLocaleDateString();
+  }
+
+  // Helper: convert Wei to Ether (for ETH txs)
+  function weiToEther(wei: string) {
+    return (parseFloat(wei) / 1e18).toFixed(4);
+  }
+  // Server-side async function to build the component HTML
+  // Define your address and API key
+
+  // Now you can access your variables:
+  const apiKey = config().ETHERSCAN_API_KEY;
+  console.log(apiKey);
+  // Fetch the transactions on the server
+  const txs = await fetchTransactions(address, apiKey);
+  console.log(txs);
+
+  // Build the component with state pre-populated with transactions
+  const table = createComponent("app")
+    .addProvider({/* any providers if needed */})
+    .setState(() => ({
+      txs, // preloaded transactions
+      address,
+      apiKey,
+    }))
+    .addActions({
+      // You can still have actions if you plan to update state on the client later.
+      updateTxs: (ctx: any, newTxs: any[]) => ({ txs: newTxs }),
+    })
+    // No side effect for fetching txs now since they're fetched server-side.
+    .addSideEffects({})
+    .addChildren({
+      // Child function that generates table rows from transactions
+      rows: (ctx: any) => {
+        if (!ctx.state.txs || ctx.state.txs.length === 0) {
+          return `<tr>
+            <td colspan="7" class="px-4 py-2 text-center text-sm text-iron-fox-dark-gray">
+              No transactions found.
+            </td>
+          </tr>`;
+        }
+        return ctx.state.txs.map((tx: any) => {
+          // We assume ETH transactions here; adjust as needed.
+          return `
+            <tr class="hover:bg-iron-fox-light-gray cursor-pointer">
+              <td class="px-4 py-2">
+                <input type="checkbox" class="form-checkbox" />
+              </td>
+              <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${tx.hash}</td>
+              <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">ETH</td>
+              <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${
+            weiToEther(tx.value)
+          }</td>
+              <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${
+            formatDate(tx.timeStamp)
+          }</td>
+              <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${tx.from}</td>
+              <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${tx.to}</td>
+            </tr>
+          `;
+        }).join("");
+      },
+    })
+    .setTemplate((ctx: any) => `
+      <table class="w-full min-w-full">
+        <thead>
+          <tr class="text-left text-sm font-medium text-iron-fox-cyan">
+            <!-- Checkbox column header -->
+            <th class="px-4 py-2 flex justify-start">
+              <input type="checkbox" class="form-checkbox" />
+            </th>
+            <th class="px-4 py-2">Transaction Hash</th>
+            <th class="px-4 py-2">Token</th>
+            <th class="px-4 py-2">Amount</th>
+            <th class="px-4 py-2">Date</th>
+            <th class="px-4 py-2">From</th>
+            <th class="px-4 py-2">To</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-iron-fox-dark-gray">
+          ${ctx.children.rows}
+        </tbody>
+      </table>
+    `)
+    .build();
+
+  // Return the rendered HTML of the component
+
+  // Example usage: On your server, call buildTableComponent() to generate the HTML.
   const step2 = createComponent("step2")
     .addProvider({})
     .setState(() => ({
@@ -151,12 +184,12 @@ router.get("/fox-trace-app", async (ctx) => {
     })).addActions({})
     .addSideEffects({})
     .addChildren({
-      extra: () => table,
+      extra: () => table.render(),
     })
     .setTemplate((ctx) => {
       return `
 <div class="mt-10">${
-        interpolateFileSync(
+        renderTemplateWithContext(
           join(Deno.cwd(), htmlFolderPath, "card.html"),
           ctx,
         )
@@ -172,7 +205,7 @@ router.get("/fox-trace-app", async (ctx) => {
     .addSideEffects({})
     .addChildren({})
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "button.html"),
         ctx,
       )
@@ -192,7 +225,7 @@ router.get("/fox-trace-app", async (ctx) => {
     .setTemplate((ctx) => {
       return `
 <div class="mt-10">${
-        interpolateFileSync(
+        renderTemplateWithContext(
           join(Deno.cwd(), htmlFolderPath, "card.html"),
           ctx,
         )
@@ -217,7 +250,7 @@ ${step3}
 `,
     })
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )

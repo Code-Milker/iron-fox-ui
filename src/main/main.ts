@@ -1,6 +1,6 @@
 import { join } from "https://deno.land/std/path/mod.ts";
 import { Router } from "https://deno.land/x/oak/mod.ts";
-import { interpolateFileSync } from "../moomoo/moo-moo.ts";
+import { renderTemplateWithContext } from "../moomoo/moo-moo.ts";
 import { createComponent } from "../moomoo/component.ts";
 import { htmlFolderPath } from "../types.ts";
 import { generatePage } from "../moomoo/page.ts";
@@ -30,7 +30,7 @@ router.get("/", async (ctx) => {
       },
     })
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "card-with-img.html"),
         ctx,
       )
@@ -45,7 +45,7 @@ router.get("/", async (ctx) => {
     .addSideEffects({})
     .addChildren({ content: () => card })
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "content.html"),
         ctx,
       )
@@ -59,13 +59,13 @@ router.get("/", async (ctx) => {
     .addChildren({
       content: () => content,
       mission: () =>
-        interpolateFileSync(
+        renderTemplateWithContext(
           join(Deno.cwd(), htmlFolderPath, "mission.html"),
           {},
         ),
     })
     .setTemplate((ctx) =>
-      interpolateFileSync(
+      renderTemplateWithContext(
         join(Deno.cwd(), htmlFolderPath, "main.html"),
         ctx,
       )

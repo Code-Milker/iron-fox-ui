@@ -13,7 +13,7 @@ import {
   tokenAmount,
   weiToEther,
 } from "../../utils.ts";
-
+const html = String.raw;
 const router = new Router();
 
 router.get("/fox-trace-app", async (ctx) => {
@@ -39,12 +39,13 @@ router.get("/fox-trace-app", async (ctx) => {
       address: address.data,
       title: "Step 1: Chain select",
       body: "Select the chain your funds were taken on",
+      selectedChain: "1",
     }))
     .addActions({})
     .addSideEffects({})
     .addChildren({
       extra: () => {
-        return `
+        return html`
 <div class="w-full my-10">
   <div class="mx-auto max-w-[600px] flex justify-center border rounded border-iron-fox-dark-gray pr-3">
     <select
@@ -81,81 +82,45 @@ router.get("/fox-trace-app", async (ctx) => {
   const txs = await fetchTransferOuts(address, apiKey);
 
   // Build the table component with state pre-populated with transactions
-  const table = createComponent("app")
+  const table = createComponent("table")
     .addProvider({})
     .setState(() => ({
-      transactions: [txs[0]],
       selectedTransactions: [] as string[],
       justSelectedTransaction: "",
       justUnselectedTransaction: "",
     }))
     .addActions({
-      toggleTransaction: (ctx, tx) => {
-        // console.log(ctx);
-        // TODO: make sure actions are firing off correctly
-        // make sure side effects are firing off correctly
-        const alreadySelected = !!ctx.state.selectedTransactions.find((t) =>
-          t === tx
-        );
-        if (alreadySelected) {
+      toggleTransaction: (ctx, hash: string) => {
+        if (ctx.state.selectedTransactions.includes(hash)) {
           return {
-            selectedTransactions: ctx.state.selectedTransactions.filter((t) =>
-              t !== tx
+            selectedTransactions: ctx.state.selectedTransactions.filter((h) =>
+              h !== hash
             ),
           };
         } else {
           return {
             selectedTransactions: [
               ...ctx.state.selectedTransactions,
-              ctx.state.justSelectedTransaction,
+              hash,
             ],
           };
         }
       },
     })
-    .addSideEffects({})
-    .addChildren({
-      // Child function that generates table rows from transactions
-      rows: (ctx) => {
-        return ctx.state.transactions
-          .map((tx: any) => {
-            const isERC20 = !!tx.tokenSymbol;
-            const token = isERC20 ? tx.tokenSymbol : "ETH";
-            const amount = isERC20 ? tokenAmount(tx) : weiToEther(tx.value);
-            return `
-          <tr class="hover:bg-iron-fox-light-gray cursor-pointer" onclick="app.actions.toggleTransaction(app,'${tx?.hash}')">
-            <td class=" py-2">
-              <input type="checkbox" class="form-checkbox"/>
-            </td>
-            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${
-              shortenHash(tx.hash)
-            }</td>
-            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${token}</td>
-            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
-              formatAmount(amount)
-            }</td>
-            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
-              formatDateTime(tx.timeStamp)
-            }</td>
-            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
-              shortenHash(tx.from)
-            }</td>
-            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
-              shortenHash(tx.to)
-            }</td>
-          </tr>
-        `;
-          })
-          .join("");
+    .addSideEffects({
+      log: (ctx) => {
+        console.log(ctx.state);
       },
     })
+    .addChildren({})
     .setTemplate(
-      (ctx: any) => `
+      (ctx) => {
+        return html`
+<button onclick="${ctx.sideEffects.log()}">hey</button>
       <table class="w-full min-w-full">
         <thead>
           <tr class="text-left text-sm font-medium text-iron-fox-cyan">
             <th class="py-2 flex justify-start">
-              <input type="checkbox" class="form-checkbox" id="select-all" onclick="toggleAllCheckboxes()" />
             </th>
             <th class="py-2">Transaction Hash</th>
             <th class="py-2">Token</th>
@@ -166,25 +131,46 @@ router.get("/fox-trace-app", async (ctx) => {
           </tr>
         </thead>
         <tbody class="divide-y divide-iron-fox-dark-gray">
-          ${ctx.children.rows}
+          ${
+          txs
+            .map((tx: any) => {
+              const isERC20 = !!tx.tokenSymbol;
+              const token = isERC20 ? tx.tokenSymbol : "ETH";
+              const amount = isERC20 ? tokenAmount(tx) : weiToEther(tx.value);
+              return `
+          <tr class="hover:bg-iron-fox-light-gray cursor-pointer">
+            <td class=" py-2">
+              <input type="checkbox" class="form-checkbox" onclick="${
+                ctx.actions.toggleTransaction(tx.hash)
+              }"/>
+            </td>
+            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray">${
+                shortenHash(tx.hash)
+              }</td>
+            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${token}</td>
+            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
+                formatAmount(amount)
+              }</td>
+            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
+                formatDateTime(tx.timeStamp)
+              }</td>
+            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
+                shortenHash(tx.from)
+              }</td>
+            <td class="px-4 py-2 text-sm text-iron-fox-dark-gray text-center">${
+                shortenHash(tx.to)
+              }</td>
+          </tr>
+        `;
+            })
+            .join("")
+        }
         </tbody>
       </table>
-  `,
+  `;
+      },
     )
     .build();
-  /* Click Handling */
-  // function toggleCheckbox(hash) {
-  //   const checkbox = document.getElementById(`check-${hash}`);
-  //   if (checkbox) checkbox.checked = !checkbox.checked;
-  // }
-  //
-  // function toggleAllCheckboxes() {
-  //   const checkboxes = document.querySelectorAll("tbody input[type='checkbox']");
-  //   const selectAll = document.getElementById("select-all") as HTMLInputElement;
-  //   checkboxes.forEach((checkbox) => {
-  //     (checkbox as HTMLInputElement).checked = selectAll.checked;
-  //   });
-  // }
 
   // Build the rest of the page components
   const step2 = createComponent("step2")
@@ -204,11 +190,10 @@ router.get("/fox-trace-app", async (ctx) => {
     })
     .setTemplate((step2) => {
       return `
-<button onclick="${step2.actions.someAction}"></button>
 <div class="mt-10">${
         renderTemplateWithContext(
           join(Deno.cwd(), htmlFolderPath, "card.html"),
-          ctx,
+          step2,
         )
       }
 </div>
@@ -238,7 +223,24 @@ router.get("/fox-trace-app", async (ctx) => {
         "once you verify the selected transactions above are correct, you click below to generate your report",
     }))
     .addActions({})
-    .addSideEffects({})
+    .addSideEffects({
+      start: async () => {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log("Response:", responseData);
+        } else {
+          console.error("HTTP Error:", response.status, response.statusText);
+        }
+      },
+    })
     .addChildren({
       extra: () => button,
     })
@@ -254,7 +256,6 @@ router.get("/fox-trace-app", async (ctx) => {
 `;
     })
     .build().render();
-
   const content = createComponent("content")
     .addProvider({})
     .setState(() => ({
@@ -264,7 +265,7 @@ router.get("/fox-trace-app", async (ctx) => {
     .addSideEffects({})
     .addChildren({
       content: () => `
- ${selectChain}
+  ${selectChain}
 ${step2}
 ${step3}
 `,

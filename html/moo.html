@@ -1,12 +1,15 @@
 <script>
- const render = function(updatedState, caller) {
-              // ${name}.state = { ...${name}.state, ...updatedState };
-              document.querySelectorAll("[moo]").forEach((el) => {
-                const mooConfig = JSON.parse(el.getAttribute("moo"));
-                const key = mooConfig.key;
-                if (key  ) {
-                  // el.textContent = ${name}.state[key];
-                }
-              });
-            }
+  const render = function (ctx,updatedState, caller) {
+    console.log(updatedState)
+    ctx.state = { ...ctx.state, ...updatedState };
+    console.log(ctx)
+    // document.querySelectorAll("[moo]").forEach((el) => {
+    //   const mooConfig = JSON.parse(el.getAttribute("moo"));
+    // TODO: aupdate state here
+      // const key = mooConfig.key;
+      // if (key) {
+      //   // el.textContent = ${name}.state[key];
+      // }
+    // });
+  };
 </script>

@@ -2,7 +2,7 @@ import { BuilderStep, createBuilderFactory, wrap } from "./builder.ts";
 import { generateRandomId } from "./moo-moo.ts";
 
 // -----------------------------------------------------------------
-// Helper: wrap
+// Helper: tagBindingsWithRemoval
 // -----------------------------------------------------------------
 
 function tagBindingsWithRemoval(
@@ -10,28 +10,15 @@ function tagBindingsWithRemoval(
   bindings: Record<string, Record<string, any>>,
   componentName: string,
 ): string {
-  // Get the dynamic list of binding tag names from the keys of the bindings object.
   const bindingTags = Object.keys(bindings);
-  if (!bindingTags.length) return html; // Nothing to do
-
-  // Build a dynamic pattern like: state|children|actions
+  if (!bindingTags.length) return html;
   const tagPattern = bindingTags.join("|");
 
   // --- Pass 1: Process attribute bindings ---
-  // Updated regex:
-  //   Group 1: element tag name
-  //   Group 2: everything before the attribute we care about
-  //   Group 3: attribute name
-  //   Group 4: the entire quoted attribute value (including the quotes)
-  //   Group 5: the inner attribute value (without quotes)
-  //   Group 6: the binding key extracted from within the binding tag
-  //   Group 7: any text after the attribute (up to an optional self-closing slash)
-  //   Group 8: an optional self-closing slash ("/")
   const attrRegex = new RegExp(
     `<([a-zA-Z0-9\\-]+)([^>]*?)\\s+(\\w+)=("([^"]*?<(?:(?:${tagPattern}))>\\s*([^<\\s]+)\\s*<\\/(?:(?:${tagPattern}))>[^"]*?)")([^>]*?)(\\/?)>`,
     "g",
   );
-
   html = html.replace(
     attrRegex,
     (
@@ -39,33 +26,28 @@ function tagBindingsWithRemoval(
       tagName,
       beforeAttrs,
       attrName,
-      quotedValue, // with surrounding quotes
-      innerValue, // inner attribute value (without quotes)
+      quotedValue,
+      innerValue,
       bindingKey,
       afterAttrs,
-      selfClosingSlash, // group 8: optional slash
+      selfClosingSlash,
     ) => {
       const key = bindingKey.trim();
-      // Identify which binding tag was used.
       const bindingTagMatch = new RegExp(`<(${tagPattern})>`).exec(innerValue);
       if (!bindingTagMatch) return match;
-      const tagType = bindingTagMatch[1]; // e.g. "state" or "children"
-      // Look up the replacement value from the corresponding binding object.
+      const tagType = bindingTagMatch[1];
       const replacementValue =
         bindings[tagType] && bindings[tagType][key] !== undefined
           ? bindings[tagType][key]
           : key;
-      // Replace the binding tag with the replacement value within the inner value.
       const newInnerValue = innerValue.replace(
         new RegExp(
           `<(?:${tagPattern})>\\s*${bindingKey}\\s*<\\/(?:(?:${tagPattern}))>`,
         ),
         replacementValue,
       );
-      // Build the data-moo attribute with type 'attribute'
       const mooAttr =
-        ` data-moo="{type: 'attribute', tag: '${tagType}', key: '${key}', id: '${componentName}_${generateRandomId()}'}"`;
-      // Rebuild the tag, reinserting the optional self-closing slash before the final ">"
+        ` data-moo="{type: 'attribute', tag: '${tagType}', key: '${key}', id: '${componentName}'}"`;
       return `<${tagName}${beforeAttrs} ${attrName}="${newInnerValue}"${afterAttrs}${mooAttr}${selfClosingSlash}>`;
     },
   );
@@ -79,7 +61,6 @@ function tagBindingsWithRemoval(
     textRegex,
     (match, startTag, tagName, textContent, bindingKey) => {
       const key = bindingKey.trim();
-      // Identify which binding tag we matched from the text.
       const bindingTagMatch = new RegExp(`<(${tagPattern})>`).exec(textContent);
       if (!bindingTagMatch) return match;
       const tagType = bindingTagMatch[1];
@@ -87,17 +68,14 @@ function tagBindingsWithRemoval(
         bindings[tagType] && bindings[tagType][key] !== undefined
           ? bindings[tagType][key]
           : key;
-      // Replace the binding tag with the corresponding value.
       const newTextContent = textContent.replace(
         new RegExp(
           `<(?:${tagPattern})>\\s*${bindingKey}\\s*<\\/(?:(?:${tagPattern}))>`,
         ),
         replacementValue,
       );
-      // Build the data-moo attribute with type 'value'
       const mooAttr =
         ` data-moo="{type: 'value', tag: '${tagType}', key: '${key}', id: '${componentName}_${generateRandomId()}'}"`;
-      // Insert the data-moo attribute into the start tag.
       const newStartTag = startTag.replace(/>$/, `${mooAttr}>`);
       return newStartTag + newTextContent;
     },
@@ -124,11 +102,7 @@ function tagBindingsWithRemoval(
 // -----------------------------------------------------------------
 // Inline Initializer for Children
 // -----------------------------------------------------------------
-/**
- * Transforms an object of children functions into an object
- * where each function, when invoked, receives a context object
- * containing the state's and providers.
- */
+
 const initializeChildren = <
   TState extends object,
   TProviders extends Record<string, any>,
@@ -152,6 +126,79 @@ const initializeChildren = <
     ]),
   ) as { [K in keyof TChildren]: () => string };
 };
+
+// -----------------------------------------------------------------
+// Helper Types for Template Context
+// -----------------------------------------------------------------
+
+type WrapReturn<T> = { [K in keyof T]: string };
+
+type WrappedAction<T> = T extends (ctx: any, ...args: infer A) => any
+  ? (...args: A) => string
+  : never;
+type WrappedActions<T> = { [K in keyof T]: WrappedAction<T[K]> };
+
+type WrappedSideEffect<T> = T extends (ctx: any, ...args: infer A) => any
+  ? (...args: A) => string
+  : never;
+type WrappedSideEffects<T> = { [K in keyof T]: WrappedSideEffect<T[K]> };
+
+type TaggedContext<T> = T extends {
+  state: infer S;
+  actions: infer A;
+  sideEffects: infer SE;
+  children: infer C;
+} ? Omit<T, "state" | "actions" | "sideEffects" | "children"> & {
+    state: WrapReturn<S>;
+    actions: WrappedActions<A>;
+    sideEffects: WrappedSideEffects<SE>;
+    children: WrapReturn<C>;
+  }
+  : T;
+
+// -----------------------------------------------------------------
+// Helper Functions to Create Wrapped Functions (with escaping)
+// -----------------------------------------------------------------
+
+function escapeAttribute(str: string): string {
+  return str.replace(/"/g, "&quot;");
+}
+
+function wrapAction<T extends (ctx: any, ...args: any[]) => any>(
+  _action: T,
+  nameWithId: string,
+  key: string,
+): WrappedAction<T> {
+  return ((...args: any[]) => {
+    const extraParams = args.map((a) => JSON.stringify(a)).join(", ");
+    let code: string;
+    if (extraParams) {
+      code =
+        `render(${nameWithId},${nameWithId}.actions.${key}(${nameWithId},${extraParams}),${nameWithId})`;
+    } else {
+      code = `render(${nameWithId}.actions.${key}(${nameWithId}, event))`;
+    }
+    return escapeAttribute(code);
+  }) as WrappedAction<T>;
+}
+
+function wrapSideEffect<T extends (ctx: any, ...args: any[]) => any>(
+  _sideEffect: T,
+  nameWithId: string,
+  key: string,
+): WrappedSideEffect<T> {
+  return ((...args: any[]) => {
+    const extraParams = args.map((a) => JSON.stringify(a)).join(", ");
+    let code: string;
+    if (extraParams) {
+      code =
+        `${nameWithId}.sideEffects.${key}(${nameWithId}, event, ${extraParams});`;
+    } else {
+      code = `${nameWithId}.sideEffects.${key}(${nameWithId}, event);`;
+    }
+    return escapeAttribute(code);
+  }) as WrappedSideEffect<T>;
+}
 
 // -----------------------------------------------------------------
 // Component Builder Interfaces
@@ -179,7 +226,10 @@ export interface ComponentMethods<TContext> {
   >;
 
   addSideEffects: <
-    TSideEffects extends Record<string, (ctx: TContext) => void>,
+    TSideEffects extends Record<
+      string,
+      (ctx: TContext, ...args: any[]) => void
+    >,
   >(
     sideEffects: TSideEffects,
   ) => BuilderStep<
@@ -202,7 +252,7 @@ export interface ComponentMethods<TContext> {
   >;
 
   setTemplate: (
-    templateFn: (ctx: TContext) => string,
+    templateFn: (ctx: TaggedContext<TContext>) => string,
   ) => { build(): Component<TContext> };
 }
 
@@ -244,9 +294,8 @@ const componentStepMap: {
     if (!("providers" in context)) {
       throw new Error("Providers must be set before adding children.");
     }
-
     if (!("sideEffects" in context)) {
-      throw new Error("Providers must be set before adding children.");
+      throw new Error("SideEffects must be set before adding children.");
     }
     const newContext = {
       ...context,
@@ -267,109 +316,86 @@ const componentStepMap: {
         build: () => {
           const { state, actions, sideEffects, children, providers, name } =
             context;
-
+          const nameWithId = `${name}_${generateRandomId()}`;
           if (!state) {
             throw new Error("State is not initialized. Use setState first.");
           }
-
           if (!providers) {
             throw new Error("Providers are not set. Use addProvider first.");
           }
-
           if (!templateFn) {
             throw new Error(
               "Template function is not set. Use setTemplate first.",
             );
           }
-
-          const tagState = wrap(state, (key, value) => {
-            return `<state>${key.toString()}</state>`;
-          });
-
-          const tagAction = wrap(actions, (key, value) => {
-            return `<action>${key.toString()}</action>`;
-          });
-
-          const tagSideEffect = wrap(sideEffects, (key, value) => {
-            return `<sideEffects>${key.toString()}</sideEffects>`;
-          });
-
-          const tagChildren = wrap(children, (key, value) => {
-            return `<children>${key.toString()}</children>`;
-          });
+          // @ts-ignore
+          const tagState = wrap(state, (key) => `<state>${key}</state>`);
+          // @ts-ignore
+          const tagChildren = wrap(
+            children,
+            // @ts-ignore
+            (key) => `<children>${key}</children>`,
+          );
+          const wrappedActions = {} as WrappedActions<typeof actions>;
+          for (const key in actions) {
+            wrappedActions[key] = wrapAction(actions[key], nameWithId, key);
+          }
+          const wrappedSideEffects = {} as WrappedSideEffects<
+            typeof sideEffects
+          >;
+          for (const key in sideEffects) {
+            wrappedSideEffects[key] = wrapSideEffect(
+              sideEffects[key],
+              nameWithId,
+              key,
+            );
+          }
           const taggedTemplate = templateFn({
             state: tagState,
-            actions: tagAction,
-            sideEffects: tagSideEffect,
+            actions: wrappedActions,
+            sideEffects: wrappedSideEffects,
             children: tagChildren,
           });
-
           const template = () => {
             const indent = (str: any, spaces = 2) =>
               str.split("\n").map((line: any) => " ".repeat(spaces) + line)
-                .join(
-                  "\n",
-                );
-
+                .join("\n");
             const formatObject = (obj: any) =>
               Object.entries(obj)
-                .map(([key, value]) => `  ${key}: ${value?.toString()},`)
+                .map(([k, v]) => `  ${k}: ${v?.toString()},`)
                 .join("\n");
-
             const scriptState = `state: ${JSON.stringify(state, null, 2)},`;
-
             const scriptActions = actions && Object.keys(actions).length
               ? `actions: {\n${indent(formatObject(actions), 2)}\n},`
               : "";
-
             const scriptSideEffects =
               sideEffects && Object.keys(sideEffects).length
                 ? `sideEffects: {\n${indent(formatObject(sideEffects), 2)}\n},`
                 : "";
-
             const scriptProviders = providers && Object.keys(providers).length
               ? `providers: {\n${indent(formatObject(providers), 2)}\n},`
               : "";
-
             const script = `
 <script>
-const ${name} = {
+const ${nameWithId} = {
   ${scriptState}
   ${scriptActions}
   ${scriptSideEffects}
   ${scriptProviders}
 };
 </script>
-`.replace(/^\s*\n/gm, ""); // Remove leading newlines for better spacing
-
-            console.log(script);
-
-            const wrappedActions = wrap(actions, (key) => {
-              return `${name}.render(${name}.actions.${
-                String(key)
-              }(${name}),'${name}');`;
-            });
-            const wrappedSideEffects = wrap(sideEffects, (key) => {
-              return `${name}.sideEffects.${String(key)}();`;
-            });
-            const wrappedChildren = wrap(children, (key) => {
-              return children[key]();
-            });
-
-            console.log(script);
-            console.log({ wrappedActions });
-            console.log({ state });
-            const markdown = tagBindingsWithRemoval(taggedTemplate, {
-              state,
-              actions: wrappedActions,
-              children: wrappedChildren,
-              sideEffects: wrappedSideEffects,
-            }, name);
-            const template = [
-              script,
-              markdown,
-            ].join("\n");
-            return template;
+`.replace(/^\s*\n/gm, "");
+            const finalHtml = tagBindingsWithRemoval(
+              taggedTemplate,
+              {
+                state,
+                action: wrappedActions,
+                sideEffect: wrappedSideEffects,
+                children: wrap(children, (key) => children[key]()),
+              },
+              nameWithId,
+            );
+            return [script, finalHtml].join("\n");
           };
           return {
             ctx: { ...context },
@@ -385,10 +411,6 @@ const ${name} = {
 // Component Builder Factory
 // -----------------------------------------------------------------
 
-/**
- * The component builder starts with the `addProvider` method.
- * It requires a providers object and also uses the provided name.
- */
 export const createComponent = createBuilderFactory<
   { name: string; providers?: Record<string, any> },
   "addProvider",

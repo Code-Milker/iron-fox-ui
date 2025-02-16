@@ -30,13 +30,17 @@ export const generatePage = async (page: string, dependencies: any) => {
   const footer = await Deno.readTextFile(
     join(Deno.cwd(), htmlFolderPath, "footer.html"),
   );
+  const moo = await Deno.readTextFile(
+    join(Deno.cwd(), htmlFolderPath, "moo.html"),
+  );
   let template = await Deno.readTextFile(filePath);
   for (
     const [key, value] of Object.entries({
       header,
       footer,
+      moo,
       page: page,
-      css: `<style>${cssContent}</style>`,
+      css: '<link rel="stylesheet" href="styles.css">',
       title: "hey",
       dependencies: fetchDependencies(dependencies ?? {}),
     })

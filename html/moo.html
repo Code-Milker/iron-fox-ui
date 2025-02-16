@@ -1,0 +1,12 @@
+<script>
+ const render = function(updatedState, caller) {
+              // ${name}.state = { ...${name}.state, ...updatedState };
+              document.querySelectorAll("[moo]").forEach((el) => {
+                const mooConfig = JSON.parse(el.getAttribute("moo"));
+                const key = mooConfig.key;
+                if (key  ) {
+                  // el.textContent = ${name}.state[key];
+                }
+              });
+            }
+</script>

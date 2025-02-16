@@ -132,19 +132,23 @@ function tagBindingsWithRemoval(
 const initializeChildren = <
   TState extends object,
   TProviders extends Record<string, any>,
+  TSideEffects extends Record<string, any>,
   TChildren extends Record<
     string,
-    (ctx: { state: TState; providers: TProviders }) => string
+    (
+      ctx: { state: TState; providers: TProviders; sideEffects: TSideEffects },
+    ) => string
   >,
 >(
   childrenObj: TChildren,
   state: TState,
   providers: TProviders,
+  sideEffects: TSideEffects,
 ): { [K in keyof TChildren]: () => string } => {
   return Object.fromEntries(
     Object.entries(childrenObj).map(([key, child]) => [
       key,
-      () => child({ state, providers }),
+      () => child({ state, providers, sideEffects }),
     ]),
   ) as { [K in keyof TChildren]: () => string };
 };
@@ -240,9 +244,18 @@ const componentStepMap: {
     if (!("providers" in context)) {
       throw new Error("Providers must be set before adding children.");
     }
+
+    if (!("sideEffects" in context)) {
+      throw new Error("Providers must be set before adding children.");
+    }
     const newContext = {
       ...context,
-      children: initializeChildren(children, context.state, context.providers),
+      children: initializeChildren(
+        children,
+        context.state,
+        context.providers,
+        context.sideEffects,
+      ),
     };
     return { nextContext: newContext, nextStep: "setTemplate" };
   },
@@ -292,63 +305,60 @@ const componentStepMap: {
           });
 
           const template = () => {
-            const scriptState = `state: ${JSON.stringify(state, null, 1)}\n`;
-            const scriptActions = `actions: {\n${
-              Object.keys(actions)
-                .map((key) => `${key}: ${actions[key].toString()},`)
-                .join("\n")
-            }\n}`;
-            const scriptSideEffects = `sideEffects: {\n${
-              Object.keys(sideEffects)
-                .map((key) => `${key}: ${sideEffects[key].toString()},`)
-                .join("\n")
-            }\n}`;
-            const scriptProviders = `providers: {\n${
-              Object.keys(providers)
-                .map((key) => `${key}: ${providers[key].toString()},`)
-                .join("\n")
-            }\n}`;
-            // console.log(templateFn({
-            //   state: state,
-            //   actions: actions,
-            //   sideEffects: sideEffects,
-            //   children: children,
-            // }));
+            const indent = (str: any, spaces = 2) =>
+              str.split("\n").map((line: any) => " ".repeat(spaces) + line)
+                .join(
+                  "\n",
+                );
+
+            const formatObject = (obj: any) =>
+              Object.entries(obj)
+                .map(([key, value]) => `  ${key}: ${value?.toString()},`)
+                .join("\n");
+
+            const scriptState = `state: ${JSON.stringify(state, null, 2)},`;
+
+            const scriptActions = actions && Object.keys(actions).length
+              ? `actions: {\n${indent(formatObject(actions), 2)}\n},`
+              : "";
+
+            const scriptSideEffects =
+              sideEffects && Object.keys(sideEffects).length
+                ? `sideEffects: {\n${indent(formatObject(sideEffects), 2)}\n},`
+                : "";
+
+            const scriptProviders = providers && Object.keys(providers).length
+              ? `providers: {\n${indent(formatObject(providers), 2)}\n},`
+              : "";
+
+            const script = `
+<script>
+const ${name} = {
+  ${scriptState}
+  ${scriptActions}
+  ${scriptSideEffects}
+  ${scriptProviders}
+};
+</script>
+`.replace(/^\s*\n/gm, ""); // Remove leading newlines for better spacing
+
+            console.log(script);
+
             const wrappedActions = wrap(actions, (key) => {
               return `${name}.render(${name}.actions.${
                 String(key)
               }(${name}),'${name}');`;
             });
             const wrappedSideEffects = wrap(sideEffects, (key) => {
-              return `${name}.sideEffects.${String(key)}()`;
+              return `${name}.sideEffects.${String(key)}();`;
             });
-            //TODO: include children struct on return
             const wrappedChildren = wrap(children, (key) => {
               return children[key]();
             });
-            const script = `
-          <script>
-          const ${name} = {
-            ${scriptState},
-            ${scriptActions},
-            ${true ? "" : scriptSideEffects}
-            render: function(updatedState, caller) {
-              if ('${name}' !== caller) {
-                return;
-              }
-              ${name}.state = { ...${name}.state, ...updatedState };
-              document.querySelectorAll("[moo]").forEach((el) => {
-                const mooConfig = JSON.parse(el.getAttribute("moo"));
-                const key = mooConfig.key;
-                if (key && key in ${name}.state && mooConfig.name === '${name}') {
-                  el.textContent = ${name}.state[key];
-                }
-              });
-            }
-          }
-          </script>
-          `;
 
+            console.log(script);
+            console.log({ wrappedActions });
+            console.log({ state });
             const markdown = tagBindingsWithRemoval(taggedTemplate, {
               state,
               actions: wrappedActions,
